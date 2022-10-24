@@ -12,39 +12,5 @@ export function parseName(name: string): [string, string] {
     );
   }
 
-  return nameParts;
+  return nameParts as [string, string];
 }
-
-// export function domainPriceUsd(domain: string): number {
-//   const nameParts = domain.split(".");
-//   if (nameParts.length !== 2) return Number("inf");
-//
-//   const name = nameParts[0];
-//   if (name.length === 0) return Number("inf");
-//
-//   let price: number;
-//   let hasEmoji = false;
-//
-//   if (/\p{Extended_Pictographic}/u.test(name)) {
-//     hasEmoji = true;
-//   }
-//
-//   switch (name.length) {
-//     case 1:
-//       price = 500;
-//       break;
-//
-//     case 2:
-//       price = hasEmoji ? 1000 : 50;
-//       break;
-//
-//     case 3:
-//       price = hasEmoji ? 100 : 5;
-//       break;
-//
-//     default:
-//       price = hasEmoji ? 50 : 5;
-//   }
-//
-//   return price;
-// }
