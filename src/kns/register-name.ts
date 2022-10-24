@@ -2,18 +2,19 @@ import {
   ContractExecuteTransaction,
   ContractFunctionParameters,
   type Provider,
+  Signer,
   type TransactionResponse,
 } from "@hashgraph/sdk";
 import { parseName } from "../utils/parse-name.js";
 import { getRegisterPriceOfName } from "../utils/register-price-name.js";
 import BigNumber from "bignumber.js";
 
-export function registerName({
-  provider,
+export async function registerName({
+  signer,
   name,
   duration: { years },
 }: {
-  provider: Provider;
+  signer: Signer;
   name: string;
   duration: { years: number };
 }): Promise<TransactionResponse> {
@@ -40,5 +41,7 @@ export function registerName({
     // FIXME: determine the correct gas amount
     .setGas(2_000_000);
 
-  return provider.call(transaction);
+  await signer.populateTransaction(transaction);
+
+  return signer.call(transaction);
 }

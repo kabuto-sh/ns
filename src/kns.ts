@@ -1,28 +1,33 @@
-import type { Provider } from "@hashgraph/sdk";
+import type { Signer } from "@hashgraph/sdk";
 import { TransactionResponse } from "@hashgraph/sdk";
 import { registerName } from "./kns/register-name.js";
+import { getName, type Name } from "./kns/get-name.js";
 
 export class KNS {
-  private _provider?: Provider;
+  private _signer?: Signer;
 
-  setProvider(provider: Provider) {
-    this._provider = provider;
+  setSigner(signer: Signer) {
+    this._signer = signer;
   }
 
   registerName(
     name: string,
     duration: { years: number }
   ): Promise<TransactionResponse> {
-    if (this._provider == null) {
+    if (this._signer == null) {
       throw Error(
-        "provider required, call setProvider before calling registerName"
+        "provider required, call setSigner before calling registerName"
       );
     }
 
     return registerName({
-      provider: this._provider,
+      signer: this._signer,
       name,
       duration,
     });
+  }
+
+  getName(name: string): Promise<Name> {
+    return getName(name);
   }
 }
