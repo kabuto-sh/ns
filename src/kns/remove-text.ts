@@ -17,7 +17,7 @@ export async function removeText({
   const nameSerial = await getNameSerial(parsedName);
 
   // FIXME: the TLD contract ID should be in a map of available TLDs
-  const tldContractId = "0.0.48699076";
+  const tldContractId = "0.0.48727098";
 
   const removeParams = new ContractFunctionParameters()
     .addInt64(nameSerial)

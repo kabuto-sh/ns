@@ -13,9 +13,15 @@ export interface Name {
 export async function getName(name: string): Promise<Name> {
   interface KabutoInfoResponse {
     data: {
-      contract_id: string;
-      nft_serial: number;
-      zone_token_id: string;
+      domain: {
+        contract_id: string;
+        nft_serial: number;
+        zone_token_id: string;
+      };
+      zone: {
+        size: number;
+        // TODO: ttl
+      };
     };
   }
 
@@ -27,8 +33,8 @@ export async function getName(name: string): Promise<Name> {
       `/domain/${name}/info`
     );
 
-    tokenId = kabutoResp.data.data.zone_token_id;
-    serialNumber = kabutoResp.data.data.nft_serial;
+    tokenId = kabutoResp.data.data.domain.zone_token_id;
+    serialNumber = kabutoResp.data.data.domain.nft_serial;
   } catch (error) {
     if (axios.isAxiosError(error) && error.response?.status === 400) {
       throw new NameNotFoundError();

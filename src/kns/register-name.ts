@@ -19,7 +19,7 @@ export async function registerName({
   const parsedName = parseName(name);
 
   // FIXME: the TLD contract ID should be in a map of available TLDs
-  const tldContractId = "0.0.48699076";
+  const tldContractId = "0.0.48727098";
 
   const unitPrice = await getRegisterPriceHbar(name);
   const price = unitPrice.toBigNumber().multipliedBy(years);
