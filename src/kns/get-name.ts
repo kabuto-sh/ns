@@ -1,5 +1,5 @@
 import { kabutoResolver } from "../resolver.js";
-import { hederaMirror } from "../mirror.js";
+import { getNft } from "../hedera-mirror.js";
 import { AccountId } from "@hashgraph/sdk";
 import axios from "axios";
 
@@ -37,16 +37,10 @@ export async function getName(name: string): Promise<Name> {
     throw error;
   }
 
-  interface HederaNftResponse {
-    account_id: string;
-  }
-
-  const hederaResp = await hederaMirror.get<HederaNftResponse>(
-    `/api/v1/tokens/${tokenId}/nfts/${serialNumber}`
-  );
+  const nft = await getNft(tokenId, serialNumber);
 
   return {
-    ownerAccountId: AccountId.fromString(hederaResp.data.account_id),
+    ownerAccountId: nft.ownerAccountId,
     tokenId,
     serialNumber,
   };

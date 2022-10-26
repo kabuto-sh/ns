@@ -1,5 +1,6 @@
 {
   "name": "@kabuto-sh/ns",
+  "type": "module",
   "version": "0.1.0",
   "description": "The only full decentralized Web3 name service on Hedera Hashgraph.",
   "main": "lib/index.js",

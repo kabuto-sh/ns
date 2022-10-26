@@ -6,8 +6,7 @@ import {
   type TransactionResponse,
 } from "@hashgraph/sdk";
 import { parseName } from "../utils/parse-name.js";
-import { getRegisterPriceOfName } from "../utils/register-price-name.js";
-import BigNumber from "bignumber.js";
+import { getRegisterPriceHbar } from "./get-register-price.js";
 
 export async function registerName({
   signer,
@@ -23,12 +22,8 @@ export async function registerName({
   // FIXME: the TLD contract ID should be in a map of available TLDs
   const tldContractId = "0.0.48699076";
 
-  const priceUsd = getRegisterPriceOfName(sld);
-
-  // FIXME: get USD TO HBAR from CoinGecko
-  const usdToHbar = new BigNumber("16.88");
-
-  const priceHbar = usdToHbar.multipliedBy(priceUsd).multipliedBy(years);
+  const unitPrice = await getRegisterPriceHbar(name);
+  const price = unitPrice.toBigNumber().multipliedBy(years);
 
   const registerParams = new ContractFunctionParameters()
     .addString(sld)
@@ -37,7 +32,7 @@ export async function registerName({
   const transaction = new ContractExecuteTransaction()
     .setContractId(tldContractId)
     .setFunction("purchaseZone", registerParams)
-    .setPayableAmount(priceHbar)
+    .setPayableAmount(price)
     // FIXME: determine the correct gas amount
     .setGas(2_000_000);
 
