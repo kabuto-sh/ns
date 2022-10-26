@@ -1,4 +1,4 @@
-import { parseName } from "../utils/parse-name.js";
+import { parseName } from "./parse-name.js";
 import BigNumber from "bignumber.js";
 import { getHbarPrice } from "../coingecko.js";
 import { Hbar } from "@hashgraph/sdk";
@@ -13,7 +13,7 @@ export async function getRegisterPriceHbar(name: string): Promise<Hbar> {
 
 export function getRegisterPriceUsd(name: string): BigNumber {
   if (name.includes(".")) {
-    name = parseName(name)[0];
+    name = parseName(name).secondLevelDomain;
   }
 
   let price: number;

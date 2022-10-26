@@ -1,12 +1,14 @@
 import type { Signer } from "@hashgraph/sdk";
 import { Hbar, TransactionResponse } from "@hashgraph/sdk";
 import { registerName } from "./kns/register-name.js";
+import { removeText } from "./kns/remove-text.js";
 import { getName, type Name } from "./kns/get-name.js";
 import BigNumber from "bignumber.js";
 import {
   getRegisterPriceHbar,
   getRegisterPriceUsd,
 } from "./kns/get-register-price.js";
+import { setText } from "./kns/set-text.js";
 
 export class KNS {
   private _signer?: Signer;
@@ -43,20 +45,52 @@ export class KNS {
     name: string,
     duration: { years: number }
   ): Promise<TransactionResponse> {
-    if (this._signer == null) {
-      throw Error(
-        "provider required, call setSigner before calling registerName"
-      );
-    }
+    this._requireSigner();
 
     return registerName({
-      signer: this._signer,
+      signer: this._signer!,
       name,
       duration,
     });
   }
 
+  /**
+   * Gets the registration information for a name, if registered.
+   */
   getName(name: string): Promise<Name> {
     return getName(name);
+  }
+
+  /**
+   * Sets the text record for a name.
+   */
+  setText(name: string, text: string): Promise<TransactionResponse> {
+    this._requireSigner();
+
+    return setText({
+      signer: this._signer!,
+      text,
+      name,
+    });
+  }
+
+  /**
+   * Removes a text record for a name.
+   */
+  removeText(name: string): Promise<TransactionResponse> {
+    this._requireSigner();
+
+    return removeText({
+      signer: this._signer!,
+      name,
+    });
+  }
+
+  private _requireSigner() {
+    if (this._signer == null) {
+      throw Error(
+        "provider required, call setSigner before calling registerName"
+      );
+    }
   }
 }

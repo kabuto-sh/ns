@@ -1,11 +1,10 @@
 import {
   ContractExecuteTransaction,
   ContractFunctionParameters,
-  type Provider,
-  Signer,
+  type Signer,
   type TransactionResponse,
 } from "@hashgraph/sdk";
-import { parseName } from "../utils/parse-name.js";
+import { parseName } from "./parse-name.js";
 import { getRegisterPriceHbar } from "./get-register-price.js";
 
 export async function registerName({
@@ -17,7 +16,7 @@ export async function registerName({
   name: string;
   duration: { years: number };
 }): Promise<TransactionResponse> {
-  const [sld, tld] = parseName(name);
+  const parsedName = parseName(name);
 
   // FIXME: the TLD contract ID should be in a map of available TLDs
   const tldContractId = "0.0.48699076";
@@ -26,7 +25,7 @@ export async function registerName({
   const price = unitPrice.toBigNumber().multipliedBy(years);
 
   const registerParams = new ContractFunctionParameters()
-    .addString(sld)
+    .addString(parsedName.secondLevelDomain)
     .addUint256(years);
 
   const transaction = new ContractExecuteTransaction()
