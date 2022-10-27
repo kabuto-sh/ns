@@ -13,6 +13,15 @@ import BigNumber from "bignumber.js";
 import { getRegisterPriceUsd } from "./get-register-price";
 import {ParsedRecordName, parseName, parseRecordName} from "./parse-name";
 
+export interface AddressRecord {
+
+}
+
+export interface TextRecord {
+  name: string;
+  text: string;
+}
+
 export interface Name {
   serialNumber: number;
   ownerAccountId: AccountId;
@@ -180,6 +189,23 @@ export class KNS {
     return {
       ownerAccountId: AccountId.fromString(hederaResp.data.account_id),
       serialNumber,
+    };
+  }
+
+  /**
+   * Gets all address and all text records for a name.
+   */
+  async getAll(name: string): Promise<{ text: TextRecord[]; address: AddressRecord[] }> {
+    const { data } = await this._resolver.get<{
+      data: {
+        address: null[];
+        text: TextRecord[];
+      }
+    }>(`/name/${name}/record`);
+
+    return {
+      address: [],
+      text: data.data.text,
     };
   }
 
