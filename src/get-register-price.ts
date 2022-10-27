@@ -1,15 +1,5 @@
-import { parseName } from "./parse-name.js";
 import BigNumber from "bignumber.js";
-import { getHbarPrice } from "../coingecko.js";
-import { Hbar } from "@hashgraph/sdk";
-
-export async function getRegisterPriceHbar(name: string): Promise<Hbar> {
-  const priceUsd = getRegisterPriceUsd(name);
-  const hbarToUsd = await getHbarPrice();
-  const priceHbar = priceUsd.div(hbarToUsd).decimalPlaces(8);
-
-  return new Hbar(priceHbar);
-}
+import { parseName } from "./parse-name";
 
 export function getRegisterPriceUsd(name: string): BigNumber {
   if (name.includes(".")) {
