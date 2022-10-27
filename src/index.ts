@@ -12,6 +12,7 @@ import axios, { type Axios } from "axios";
 import BigNumber from "bignumber.js";
 import { getRegisterPriceUsd } from "./get-register-price";
 import {ParsedRecordName, parseName, parseRecordName} from "./parse-name";
+import { addYears, parseISO } from "date-fns";
 
 export interface AddressRecord {
 
@@ -25,6 +26,7 @@ export interface TextRecord {
 export interface Name {
   serialNumber: number;
   ownerAccountId: AccountId;
+  expirationTime: Date;
   // TODO: expirationTime
 }
 
@@ -147,6 +149,7 @@ export class KNS {
     return {
       ownerAccountId: this._signer!.getAccountId(),
       serialNumber,
+      expirationTime: new Date(addYears(Date.now(), duration.years)),
     };
   }
 
@@ -156,6 +159,7 @@ export class KNS {
   async getName(name: string): Promise<Name> {
     let tokenId: string;
     let serialNumber: number;
+    let expirationTime: Date;
 
     try {
       const kabutoResp = await this._resolver.get<{
@@ -172,6 +176,7 @@ export class KNS {
 
       tokenId = kabutoResp.data.data.tokenId;
       serialNumber = kabutoResp.data.data.tokenSerialNumber;
+      expirationTime = parseISO(kabutoResp.data.data.expiresAt);
     } catch (error) {
       if (axios.isAxiosError(error) && error.response?.status === 404) {
         throw new NameNotFoundError();
@@ -189,6 +194,7 @@ export class KNS {
     return {
       ownerAccountId: AccountId.fromString(hederaResp.data.account_id),
       serialNumber,
+      expirationTime,
     };
   }
 
