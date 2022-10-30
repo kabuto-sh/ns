@@ -274,9 +274,9 @@ export class KNS {
 
     const setParams = new ContractFunctionParameters()
       .addInt64(nameSerial as unknown as BigNumber)
-      .addString(parsedName.recordName)
+      .addBytes32(toBytes32(utf8Encode(parsedName.recordName)))
       .addUint32(coinType)
-      .addBytes32(serAddress);
+      .addBytes(serAddress);
 
     const transaction = new ContractExecuteTransaction()
       .setContractId(tldContractId)
@@ -319,7 +319,7 @@ export class KNS {
 
     const setParams = new ContractFunctionParameters()
       .addInt64(nameSerial as unknown as BigNumber)
-      .addString(parsedName.recordName)
+      .addBytes32(toBytes32(utf8Encode(parsedName.recordName)))
       .addString(text);
 
     const transaction = new ContractExecuteTransaction()
@@ -348,7 +348,7 @@ export class KNS {
 
     const delParams = new ContractFunctionParameters()
       .addInt64(nameSerial as unknown as BigNumber)
-      .addString(parsedName.recordName);
+      .addBytes32(toBytes32(utf8Encode(parsedName.recordName)));
 
     const transaction = new ContractExecuteTransaction()
       .setContractId(tldContractId)
@@ -374,7 +374,7 @@ export class KNS {
 
     const delParams = new ContractFunctionParameters()
       .addInt64(nameSerial as unknown as BigNumber)
-      .addString(parsedName.recordName)
+      .addBytes32(toBytes32(utf8Encode(parsedName.recordName)))
       .addUint32(coinType);
 
     const transaction = new ContractExecuteTransaction()
