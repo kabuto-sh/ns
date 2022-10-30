@@ -461,18 +461,11 @@ export class KNS {
       return this._hbarPrice;
     }
 
-    // interface HbarPriceResponse {
-    //   "hedera-hashgraph": { usd: number };
-    // }
+    const { data } = await this._resolver.get<{
+      data: { usd: number };
+    }>("/exchange-rate");
 
-    // const { data } = await this._coinGecko.get<HbarPriceResponse>("/v3/simple/price", {
-    //   params: {
-    //     ids: "hedera-hashgraph",
-    //     vs_currencies: "usd",
-    //   },
-    // });
-
-    this._hbarPrice = new BigNumber("0.059838");
+    this._hbarPrice = new BigNumber(data.data.usd);
     this._hbarPriceTimestamp = Date.now();
 
     return this._hbarPrice;
