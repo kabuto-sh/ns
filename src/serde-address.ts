@@ -1,5 +1,6 @@
 import { AccountId } from "@hashgraph/sdk";
 import { hexDecode, hexEncode } from "./hex";
+import { toBytes32 } from "./bytes";
 
 export function formatAddress(coinType: number, address: Uint8Array): string {
   switch (coinType) {
@@ -20,7 +21,7 @@ export function serializeAddress(
 
   if (typeof address === "string") {
     switch (coinType) {
-      case 3030:
+      case 3030: // HBAR
         const accountId = AccountId.fromString(address);
         const solidityAddress = accountId.toSolidityAddress();
 
@@ -36,11 +37,7 @@ export function serializeAddress(
     addressBytes = address;
   }
 
-  const paddedAddress = new Uint8Array(32);
-  paddedAddress.fill(0);
-  paddedAddress.set(addressBytes, 0);
-
-  return paddedAddress;
+  return toBytes32(addressBytes);
 }
 
 export function deserializeHederaAddress(address: Uint8Array): AccountId {

@@ -22,6 +22,8 @@ import {
 } from "./serde-address";
 import { hexEncode } from "./hex";
 import { base64Decode } from "./base64";
+import { utf8Encode } from "./utf8";
+import { toBytes32 } from "./bytes";
 
 export interface AddressRecord {
   name: string;
@@ -145,7 +147,7 @@ export class KNS {
     const price = unitPrice.toBigNumber().multipliedBy(duration.years);
 
     const registerParams = new ContractFunctionParameters()
-      .addString(parsedName.secondLevelDomain)
+      .addBytes32(toBytes32(utf8Encode(parsedName.secondLevelDomain)))
       .addUint256(duration.years);
 
     const transaction = new ContractExecuteTransaction()

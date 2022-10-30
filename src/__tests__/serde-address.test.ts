@@ -8,11 +8,10 @@ describe("serializeAddress", () => {
     let accountId = new AccountId(50, 20, 1040);
     let address = serializeAddress(3030, accountId.toString());
 
+    expect(address.byteLength).toEqual(32);
     expect(hexEncode(address)).toEqual(
       "0000003200000000000000140000000000000410000000000000000000000000"
     );
-
-    expect(address.byteLength).toEqual(32);
 
     let reverseAccountId = deserializeHederaAddress(address);
 
