@@ -19,6 +19,7 @@ import {
   deserializeHederaAddress,
   formatAddress,
   serializeAddress,
+  serializeHederaAddress,
 } from "./serde-address";
 import { hexEncode } from "./hex";
 import { base64Decode } from "./base64";
@@ -243,6 +244,16 @@ export class KNS {
       address,
       text: data.data.text,
     };
+  }
+
+  /**
+   * Sets the HBAR address record for a name.
+   */
+  setHederaAddress(
+    name: string,
+    address: Uint8Array | string | AccountId
+  ): Promise<AddressRecord> {
+    return this.setAddress(name, 3030, serializeHederaAddress(address));
   }
 
   /**

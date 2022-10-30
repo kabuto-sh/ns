@@ -5,7 +5,7 @@ import {
   deserializeEthereumAddress,
   deserializeHederaAddress,
   serializeAddress,
-  serializeHederaAddress
+  serializeHederaAddress,
 } from "../serde-address";
 import { hexEncode } from "../hex";
 
