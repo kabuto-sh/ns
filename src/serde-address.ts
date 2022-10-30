@@ -1,11 +1,18 @@
 import { AccountId } from "@hashgraph/sdk";
 import { hexDecode, hexEncode } from "./hex";
 import { toBytes32 } from "./bytes";
+import { utf8Decode, utf8Encode } from "./utf8.js";
 
 export function formatAddress(coinType: number, address: Uint8Array): string {
   switch (coinType) {
-    case 3030:
+    case 3030: // HBAR
       return deserializeHederaAddress(address).toString();
+
+    case 0: // BTC
+      return deserializeBitcoinAddress(address);
+
+    case 60: // ETH
+      return deserializeEthereumAddress(address);
 
     default:
       // fallback to a 0x.. hex encoding of the address
@@ -22,10 +29,15 @@ export function serializeAddress(
   if (typeof address === "string") {
     switch (coinType) {
       case 3030: // HBAR
-        const accountId = AccountId.fromString(address);
-        const solidityAddress = accountId.toSolidityAddress();
+        addressBytes = AccountId.fromString(address).toBytes();
+        break;
 
-        addressBytes = hexDecode(solidityAddress);
+      case 0: // BTC
+        addressBytes = utf8Encode(address);
+        break;
+
+      case 60: // ETH
+        addressBytes = hexDecode(address); // always 20 bytes
         break;
 
       default:
@@ -37,11 +49,27 @@ export function serializeAddress(
     addressBytes = address;
   }
 
-  return toBytes32(addressBytes);
+  return addressBytes;
+}
+
+export function serializeHederaAddress(
+  address: Uint8Array | string | AccountId
+): Uint8Array {
+  if (address instanceof AccountId) {
+    return address.toBytes();
+  }
+
+  return serializeAddress(3030, address);
 }
 
 export function deserializeHederaAddress(address: Uint8Array): AccountId {
-  const solidityAddress = hexEncode(address.slice(0, 20));
+  return AccountId.fromBytes(address);
+}
 
-  return AccountId.fromSolidityAddress(solidityAddress);
+export function deserializeEthereumAddress(address: Uint8Array): string {
+  return "0x" + hexEncode(address);
+}
+
+export function deserializeBitcoinAddress(address: Uint8Array): string {
+  return utf8Decode(address);
 }

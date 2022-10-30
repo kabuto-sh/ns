@@ -261,10 +261,6 @@ export class KNS {
 
     const serAddress = serializeAddress(coinType, address);
 
-    console.log(
-      `setAddress, address:${address}, serAddress:${hexEncode(serAddress)}`
-    );
-
     const setParams = new ContractFunctionParameters()
       .addInt64(nameSerial as unknown as BigNumber)
       .addString(parsedName.recordName)
