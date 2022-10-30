@@ -1,4 +1,4 @@
-import type { Signer} from "@hashgraph/sdk";
+import type { Signer } from "@hashgraph/sdk";
 import {
   AccountId,
   Hbar,
@@ -6,16 +6,27 @@ import {
   Client,
   ContractId,
   ContractFunctionParameters,
-  ContractExecuteTransaction, Transaction, TransactionReceiptQuery
+  ContractExecuteTransaction,
+  Transaction,
+  TransactionReceiptQuery,
 } from "@hashgraph/sdk";
 import axios, { type Axios } from "axios";
 import BigNumber from "bignumber.js";
 import { getRegisterPriceUsd } from "./get-register-price";
-import {ParsedRecordName, parseName, parseRecordName} from "./parse-name";
-import { addYears, parseISO } from "date-fns";
+import { ParsedRecordName, parseName, parseRecordName } from "./parse-name";
+import { addYears } from "date-fns";
+import {
+  deserializeHederaAddress,
+  formatAddress,
+  serializeAddress,
+} from "./serde-address";
+import { hexEncode } from "./hex";
+import { base64Decode } from "./base64";
 
 export interface AddressRecord {
-
+  name: string;
+  coinType: number;
+  address: Uint8Array;
 }
 
 export interface TextRecord {
@@ -69,19 +80,24 @@ export class KNS {
   private _hbarPrice: BigNumber | null = null;
   private _hbarPriceTimestamp: number = 0;
 
-  constructor(options: {
-    network: "testnet" | "mainnet",
-    resolver: string,
-  } = {
-    network: "mainnet",
-    resolver: "/api",
-  }) {
+  constructor(
+    options: {
+      network: "testnet" | "mainnet";
+      resolver: string;
+    } = {
+      network: "mainnet",
+      resolver: "/api",
+    }
+  ) {
     this._client = Client.forName(options.network);
 
     this._resolver = axios.create({ baseURL: options.resolver });
 
     this._hederaMirror = axios.create({
-      baseURL: options.network === "mainnet" ? "https://mainnet-public.mirrornode.hedera.com/" : "https://testnet.mirrornode.hedera.com/"
+      baseURL:
+        options.network === "mainnet"
+          ? "https://mainnet-public.mirrornode.hedera.com/"
+          : "https://testnet.mirrornode.hedera.com/",
     });
   }
 
@@ -108,7 +124,9 @@ export class KNS {
   async getRegisterPriceHbar(name: string): Promise<Hbar> {
     const priceUsd = this.getRegisterPriceUsd(name);
     const hbarToUsd = await this._getHbarPrice();
-    const priceHbar = priceUsd.div(hbarToUsd).decimalPlaces(8);
+    const priceHbar = priceUsd
+      .div(hbarToUsd)
+      .decimalPlaces(4, BigNumber.ROUND_UP);
 
     return new Hbar(priceHbar);
   }
@@ -117,12 +135,11 @@ export class KNS {
    * Registers a new name to the current signer for the desired duration.
    * To check how much HBAR this will cost, call `getRegisterPrice(name)`.
    */
-  async registerName(
-    name: string,
-    duration: { years: number }
-  ): Promise<Name> {
+  async registerName(name: string, duration: { years: number }): Promise<Name> {
     const parsedName = parseName(name);
-    const tldContractId = await this._getTldContractId(parsedName.topLevelDomain);
+    const tldContractId = await this._getTldContractId(
+      parsedName.topLevelDomain
+    );
 
     const unitPrice = await this.getRegisterPriceHbar(name);
     const price = unitPrice.toBigNumber().multipliedBy(duration.years);
@@ -142,7 +159,8 @@ export class KNS {
 
     const serialNumber = receipt.children
       .filter((it) => it.serials.length > 0)
-      .map((it) => it.serials[0])[0].toNumber();
+      .map((it) => it.serials[0])[0]
+      .toNumber();
 
     this._domainSerials.set(name, serialNumber);
 
@@ -164,19 +182,17 @@ export class KNS {
     try {
       const kabutoResp = await this._resolver.get<{
         data: {
-          contractId: string,
-          expiresAt: string,
-          maxRecords: number,
-          tokenId: string,
-          tokenSerialNumber: number
-        }
-      }>(
-        `/name/${name}`
-      );
+          contractId: string;
+          expiresAt: string;
+          maxRecords: number;
+          tokenId: string;
+          tokenSerialNumber: number;
+        };
+      }>(`/name/${name}`);
 
       tokenId = kabutoResp.data.data.tokenId;
       serialNumber = kabutoResp.data.data.tokenSerialNumber;
-      expirationTime = parseISO(kabutoResp.data.data.expiresAt);
+      expirationTime = new Date(Date.parse(kabutoResp.data.data.expiresAt));
     } catch (error) {
       if (axios.isAxiosError(error) && error.response?.status === 404) {
         throw new NameNotFoundError();
@@ -187,9 +203,7 @@ export class KNS {
 
     const hederaResp = await this._hederaMirror.get<{
       account_id: string;
-    }>(
-      `/api/v1/tokens/${tokenId}/nfts/${serialNumber}`
-    );
+    }>(`/api/v1/tokens/${tokenId}/nfts/${serialNumber}`);
 
     return {
       ownerAccountId: AccountId.fromString(hederaResp.data.account_id),
@@ -201,27 +215,98 @@ export class KNS {
   /**
    * Gets all address and all text records for a name.
    */
-  async getAll(name: string): Promise<{ text: TextRecord[]; address: AddressRecord[] }> {
+  async getAll(
+    name: string
+  ): Promise<{ text: TextRecord[]; address: AddressRecord[] }> {
+    interface RawAddressRecord {
+      address: string;
+      name: string;
+      coinType: number;
+    }
+
     const { data } = await this._resolver.get<{
       data: {
-        address: null[];
+        address: RawAddressRecord[];
         text: TextRecord[];
-      }
+      };
     }>(`/name/${name}/record`);
 
+    const address = data.data.address.map((rec) => ({
+      address: base64Decode(rec.address),
+      name: rec.name,
+      coinType: rec.coinType,
+    }));
+
     return {
-      address: [],
+      address,
       text: data.data.text,
     };
   }
 
   /**
-   * Sets the text record for a name.
+   * Sets the address record for a name and coin type.
    */
-  async setText(name: string, text: string): Promise<TransactionReceipt> {
+  async setAddress(
+    name: string,
+    coinType: number,
+    address: Uint8Array | string
+  ): Promise<AddressRecord> {
     const parsedName = parseRecordName(name);
     const nameSerial = await this._getNameSerial(parsedName);
-    const tldContractId = await this._getTldContractId(parsedName.topLevelDomain);
+    const tldContractId = await this._getTldContractId(
+      parsedName.topLevelDomain
+    );
+
+    const serAddress = serializeAddress(coinType, address);
+
+    console.log(
+      `setAddress, address:${address}, serAddress:${hexEncode(serAddress)}`
+    );
+
+    const setParams = new ContractFunctionParameters()
+      .addInt64(nameSerial as unknown as BigNumber)
+      .addString(parsedName.recordName)
+      .addUint32(coinType)
+      .addBytes32(serAddress);
+
+    const transaction = new ContractExecuteTransaction()
+      .setContractId(tldContractId)
+      .setFunction("setAddress", setParams)
+      // FIXME: determine the correct gas amount
+      .setGas(2_000_000);
+
+    await this._executeTransaction(transaction);
+
+    return {
+      coinType,
+      name: parsedName.recordName,
+      address: serAddress,
+    };
+  }
+
+  /**
+   * Deserializes a Hedera AccountId from the passed address bytes (from a generic AddressRecord).
+   */
+  deserializeHederaAddress(address: Uint8Array): AccountId {
+    return deserializeHederaAddress(address);
+  }
+
+  /**
+   * Formats the passed address bytes (from a generic AddressRecord) for display.
+   */
+  formatAddress(coinType: number, address: Uint8Array): string {
+    return formatAddress(coinType, address);
+  }
+
+  /**
+   * Sets the text record for a name.
+   */
+  async setText(name: string, text: string): Promise<TextRecord> {
+    const parsedName = parseRecordName(name);
+    const nameSerial = await this._getNameSerial(parsedName);
+    const tldContractId = await this._getTldContractId(
+      parsedName.topLevelDomain
+    );
 
     const setParams = new ContractFunctionParameters()
       .addInt64(nameSerial as unknown as BigNumber)
@@ -234,7 +319,12 @@ export class KNS {
       // FIXME: determine the correct gas amount
       .setGas(2_000_000);
 
-    return this._executeTransaction(transaction);
+    await this._executeTransaction(transaction);
+
+    return {
+      name: parsedName.recordName,
+      text,
+    };
   }
 
   /**
@@ -243,7 +333,9 @@ export class KNS {
   async removeText(name: string): Promise<TransactionReceipt> {
     const parsedName = parseRecordName(name);
     const nameSerial = await this._getNameSerial(parsedName);
-    const tldContractId = await this._getTldContractId(parsedName.topLevelDomain);
+    const tldContractId = await this._getTldContractId(
+      parsedName.topLevelDomain
+    );
 
     const delParams = new ContractFunctionParameters()
       .addInt64(nameSerial as unknown as BigNumber)
@@ -258,11 +350,36 @@ export class KNS {
     return this._executeTransaction(transaction);
   }
 
+  /**
+   * Removes an address record for a name and coin type.
+   */
+  async removeAddress(
+    name: string,
+    coinType: number
+  ): Promise<TransactionReceipt> {
+    const parsedName = parseRecordName(name);
+    const nameSerial = await this._getNameSerial(parsedName);
+    const tldContractId = await this._getTldContractId(
+      parsedName.topLevelDomain
+    );
+
+    const delParams = new ContractFunctionParameters()
+      .addInt64(nameSerial as unknown as BigNumber)
+      .addString(parsedName.recordName)
+      .addUint32(coinType);
+
+    const transaction = new ContractExecuteTransaction()
+      .setContractId(tldContractId)
+      .setFunction("deleteAddress", delParams)
+      // FIXME: determine the correct gas amount
+      .setGas(2_000_000);
+
+    return this._executeTransaction(transaction);
+  }
+
   private _requireSigner() {
     if (this._signer == null) {
-      throw Error(
-        "signer required, call setSigner before calling this method"
-      );
+      throw Error("signer required, call setSigner before calling this method");
     }
   }
 
@@ -276,7 +393,7 @@ export class KNS {
     const { data } = await this._resolver.get<{
       data: {
         contractId: string;
-      }
+      };
     }>(`/name/.${tld}`);
 
     contractId = ContractId.fromString(data.data.contractId);
@@ -286,9 +403,7 @@ export class KNS {
     return contractId;
   }
 
-  private async _getNameSerial(
-    parsedName: ParsedRecordName
-  ): Promise<number> {
+  private async _getNameSerial(parsedName: ParsedRecordName): Promise<number> {
     const name = `${parsedName.secondLevelDomain}.${parsedName.topLevelDomain}`;
     let nameSerial = this._domainSerials.get(name);
 
@@ -305,7 +420,9 @@ export class KNS {
     return serialNumber;
   }
 
-  private async _executeTransaction(transaction: Transaction): Promise<TransactionReceipt> {
+  private async _executeTransaction(
+    transaction: Transaction
+  ): Promise<TransactionReceipt> {
     this._requireSigner();
 
     await this._signer!.populateTransaction(transaction);
@@ -326,27 +443,29 @@ export class KNS {
   private async _getHbarPrice(): Promise<BigNumber> {
     const MINUTES_10 = 10 * 60 * 1000;
 
-    if (this._hbarPrice != null && this._hbarPriceTimestamp <= Date.now() - MINUTES_10) {
+    if (
+      this._hbarPrice != null &&
+      this._hbarPriceTimestamp <= Date.now() - MINUTES_10
+    ) {
       // hbar price is non-null, and it's been less than 10 minutes
       // since we fetched
       return this._hbarPrice;
     }
 
-    interface HbarPriceResponse {
-      "hedera-hashgraph": { usd: number };
-    }
+    // interface HbarPriceResponse {
+    //   "hedera-hashgraph": { usd: number };
+    // }
 
-    const { data } = await this._coinGecko.get<HbarPriceResponse>("/v3/simple/price", {
-      params: {
-        ids: "hedera-hashgraph",
-        vs_currencies: "usd",
-      },
-    });
+    // const { data } = await this._coinGecko.get<HbarPriceResponse>("/v3/simple/price", {
+    //   params: {
+    //     ids: "hedera-hashgraph",
+    //     vs_currencies: "usd",
+    //   },
+    // });
 
-    this._hbarPrice = new BigNumber(data["hedera-hashgraph"].usd);
+    this._hbarPrice = new BigNumber("0.059838");
     this._hbarPriceTimestamp = Date.now();
 
     return this._hbarPrice;
   }
-
 }
