@@ -233,23 +233,37 @@ export class KNS {
       coinType: number;
     }
 
-    const { data } = await this._resolver.get<{
-      data: {
-        address: RawAddressRecord[];
-        text: TextRecord[];
+    try {
+      const { data } = await this._resolver.get<{
+        data: {
+          address: RawAddressRecord[];
+          text: TextRecord[];
+        };
+      }>(`/name/${name}/record`);
+
+      const address = data.data.address.map((rec) => ({
+        address: base64Decode(rec.address),
+        name: rec.name,
+        coinType: rec.coinType,
+      }));
+
+      return {
+        address,
+        text: data.data.text,
       };
-    }>(`/name/${name}/record`);
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        switch (error.response?.status) {
+          case 404: // no domain registered
+            throw new NameNotFoundError();
+          
+          case 400: // domain expired
+            throw new NameNotFoundError();
+        }
+      }
 
-    const address = data.data.address.map((rec) => ({
-      address: base64Decode(rec.address),
-      name: rec.name,
-      coinType: rec.coinType,
-    }));
-
-    return {
-      address,
-      text: data.data.text,
-    };
+      throw error;
+    }
   }
 
   /**
