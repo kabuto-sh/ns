@@ -197,8 +197,14 @@ export class KNS {
       serialNumber = kabutoResp.data.data.tokenSerialNumber;
       expirationTime = new Date(Date.parse(kabutoResp.data.data.expiresAt));
     } catch (error) {
-      if (axios.isAxiosError(error) && error.response?.status === 404) {
-        throw new NameNotFoundError();
+      if (axios.isAxiosError(error)) {
+        switch (error.response?.status) {
+          case 404: // no domain registered
+            throw new NameNotFoundError();
+          
+          case 400: // domain expired
+            throw new NameNotFoundError();
+        }
       }
 
       throw error;
