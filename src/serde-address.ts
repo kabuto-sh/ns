@@ -1,6 +1,5 @@
 import { AccountId } from "@hashgraph/sdk";
-import { hexDecode, hexEncode } from "./hex";
-import { toBytes32 } from "./bytes";
+import { hexDecode, hexEncode } from "./hex.js";
 import { utf8Decode, utf8Encode } from "./utf8.js";
 
 export function formatAddress(coinType: number, address: Uint8Array): string {

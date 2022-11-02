@@ -1,5 +1,38 @@
 import BigNumber from "bignumber.js";
-import { parseName } from "./parse-name";
+import { parseName } from "./parse-name.js";
+import { utf8Encode } from "./utf8.js";
+
+function getByteLengthAndIsAscii(value: string): [number, boolean] {
+  let len;
+  let i = 0;
+  let isAscii = true;
+
+  const bytes = utf8Encode(value);
+
+  for (len = 0; i < bytes.length; len++) {
+    const b = bytes.at(i)!;
+
+    if (b < 0x80) {
+      i += 1;
+    } else {
+      isAscii = false;
+
+      if (b < 0xe0) {
+        i += 2;
+      } else if (b < 0xf0) {
+        i += 3;
+      } else if (b < 0xf8) {
+        i += 4;
+      } else if (b < 0xfc) {
+        i += 5;
+      } else {
+        i += 6;
+      }
+    }
+  }
+
+  return [len, isAscii];
+}
 
 export function getRegisterPriceUsd(name: string): BigNumber {
   if (name.includes(".")) {
@@ -7,27 +40,25 @@ export function getRegisterPriceUsd(name: string): BigNumber {
   }
 
   let price: number;
-  let hasEmoji = false;
 
-  if (/\p{Extended_Pictographic}/u.test(name)) {
-    hasEmoji = true;
-  }
+  const [byteLength, isAscii] = getByteLengthAndIsAscii(name);
 
-  switch (name.length) {
+  switch (byteLength) {
     case 1:
       price = 500;
       break;
 
     case 2:
-      price = hasEmoji ? 1000 : 50;
+      price = 50;
       break;
 
-    case 3:
-      price = hasEmoji ? 100 : 5;
+    default: // 3+
+      price = 5;
       break;
+  }
 
-    default:
-      price = hasEmoji ? 50 : 5;
+  if (!isAscii) {
+    price *= 2;
   }
 
   return new BigNumber(price);

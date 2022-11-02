@@ -12,19 +12,18 @@ import {
 } from "@hashgraph/sdk";
 import axios, { type Axios } from "axios";
 import BigNumber from "bignumber.js";
-import { getRegisterPriceUsd } from "./get-register-price";
-import { ParsedRecordName, parseName, parseRecordName } from "./parse-name";
+import { getRegisterPriceUsd } from "./get-register-price.js";
+import { ParsedRecordName, parseName, parseRecordName } from "./parse-name.js";
 import { addYears } from "date-fns";
 import {
   deserializeHederaAddress,
   formatAddress,
   serializeAddress,
   serializeHederaAddress,
-} from "./serde-address";
-import { hexEncode } from "./hex";
-import { base64Decode } from "./base64";
-import { utf8Encode } from "./utf8";
-import { toBytes32 } from "./bytes";
+} from "./serde-address.js";
+import { base64Decode } from "./base64.js";
+import { utf8Encode } from "./utf8.js";
+import { toBytes32 } from "./bytes.js";
 
 export interface AddressRecord {
   name: string;
@@ -75,10 +74,6 @@ export class KNS {
   // cache of DOMAINS (ex. "foo.hh") to serial numbers
   private readonly _domainSerials: Map<string, number> = new Map();
 
-  private readonly _coinGecko: Axios = axios.create({
-    baseURL: "https://api.coingecko.com/api",
-  });
-
   // cache of HBAR to USD
   private _hbarPrice: BigNumber | null = null;
   private _hbarPriceTimestamp: number = 0;
@@ -88,8 +83,8 @@ export class KNS {
       network: "testnet" | "mainnet";
       resolver: string;
     } = {
-      network: "mainnet",
-      resolver: "/api",
+      network: "testnet",
+      resolver: "https://splendid-cascaron-b736ef.netlify.app/api",
     }
   ) {
     this._client = Client.forName(options.network);
@@ -201,7 +196,7 @@ export class KNS {
         switch (error.response?.status) {
           case 404: // no domain registered
             throw new NameNotFoundError();
-          
+
           case 400: // domain expired
             throw new NameNotFoundError();
         }
@@ -256,7 +251,7 @@ export class KNS {
         switch (error.response?.status) {
           case 404: // no domain registered
             throw new NameNotFoundError();
-          
+
           case 400: // domain expired
             throw new NameNotFoundError();
         }
