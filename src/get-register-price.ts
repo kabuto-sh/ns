@@ -35,6 +35,10 @@ function getByteLengthAndIsAscii(value: string): [number, boolean] {
 }
 
 export function getRegisterPriceUsd(name: string): BigNumber {
+  if (name.length === 0) {
+    return new BigNumber("inf");
+  }
+
   if (name.includes(".")) {
     name = parseName(name).secondLevelDomain;
   }
