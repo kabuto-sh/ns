@@ -7,7 +7,7 @@ import {
   serializeAddress,
   serializeHederaAddress,
 } from "../serde-address";
-import { hexEncode } from "../hex";
+import { hexDecode, hexEncode } from "../hex";
 
 describe("serializeAddress", () => {
   it("can serialize an old BTC address", () => {
@@ -66,12 +66,20 @@ describe("serializeAddress", () => {
     expect(reverseAccountId.realm.toNumber()).toEqual(2);
   });
 
+  it("can deserialize a Hedera account ID that was serialized via toBytes", () => {
+    let reverseAccountId = deserializeHederaAddress(hexDecode("08321014189008"));
+
+    expect(reverseAccountId.num.toNumber()).toEqual(1040);
+    expect(reverseAccountId.shard.toNumber()).toEqual(50);
+    expect(reverseAccountId.realm.toNumber()).toEqual(20);
+  });
+
   it("can serialize a Hedera account ID", () => {
     let accountId = new AccountId(50, 20, 1040);
     let address = serializeAddress(3030, accountId.toString());
 
-    expect(address.byteLength).toEqual(7);
-    expect(hexEncode(address)).toEqual("08321014189008");
+    expect(address.byteLength).toEqual(20);
+    expect(hexEncode(address)).toEqual("0000003200000000000000140000000000000410");
 
     let reverseAccountId = deserializeHederaAddress(address);
 

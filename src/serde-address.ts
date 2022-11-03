@@ -28,7 +28,14 @@ export function serializeAddress(
   if (typeof address === "string") {
     switch (coinType) {
       case 3030: // HBAR
-        addressBytes = AccountId.fromString(address).toBytes();
+        const accountId = AccountId.fromString(address);
+
+        if (accountId.num.isZero()) {
+          addressBytes = accountId.toBytes();
+        } else {
+          addressBytes = hexDecode(accountId.toSolidityAddress());
+        }
+
         break;
 
       case 0: // BTC
@@ -62,7 +69,11 @@ export function serializeHederaAddress(
 }
 
 export function deserializeHederaAddress(address: Uint8Array): AccountId {
-  return AccountId.fromBytes(address);
+  if (address.byteLength != 20) {
+    return AccountId.fromBytes(address);
+  }
+
+  return AccountId.fromSolidityAddress(hexEncode(address));
 }
 
 export function deserializeEthereumAddress(address: Uint8Array): string {
