@@ -9,6 +9,8 @@ import {
   ContractExecuteTransaction,
   Transaction,
   TransactionReceiptQuery,
+  TransactionResponse,
+  StatusError,
 } from "@hashgraph/sdk";
 import axios, { type Axios } from "axios";
 import BigNumber from "bignumber.js";
@@ -40,7 +42,6 @@ export interface Name {
   serialNumber: number;
   ownerAccountId: AccountId;
   expirationTime: Date;
-  // TODO: expirationTime
 }
 
 export class NameNotFoundError extends Error {
@@ -52,10 +53,13 @@ export class NameNotFoundError extends Error {
 }
 
 export class SignerRejectedError extends Error {
-  constructor() {
+  public source?: unknown;
+
+  constructor(source?: unknown) {
     super();
 
     this.name = "SignerRejectedError";
+    this.source = source;
   }
 }
 
@@ -451,7 +455,26 @@ export class KNS {
 
     await this._signer!.populateTransaction(transaction);
 
-    const response = await this._signer!.call(transaction);
+    const transactionId = transaction.transactionId;
+    let response: TransactionResponse | null;
+
+    try {
+      response = await this._signer!.call(transaction);
+    } catch (error) {
+      // @ts-ignore
+      if (error.name === "StatusError") {
+        // if an exception is raised from a signer and that exception
+        // starts with "StatusError: _" then it's a fake status error exception
+
+        // @ts-ignore
+        throw new StatusError({
+          status: error.status,
+          transactionId: error.transactionId,
+        });
+      }
+
+      throw new SignerRejectedError(error);
+    }
 
     if (response == null) {
       throw new SignerRejectedError();
@@ -460,7 +483,7 @@ export class KNS {
     return new TransactionReceiptQuery()
       .setValidateStatus(true)
       .setIncludeChildren(true)
-      .setTransactionId(response.transactionId)
+      .setTransactionId(transactionId!)
       .execute(this._client);
   }
 

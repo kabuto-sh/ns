@@ -3,7 +3,7 @@ import { parseName } from "./parse-name.js";
 import { utf8Encode } from "./utf8.js";
 
 function getByteLengthAndIsAscii(value: string): [number, boolean] {
-  let len;
+  let len: number;
   let i = 0;
   let isAscii = true;
 
