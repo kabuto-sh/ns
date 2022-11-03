@@ -468,7 +468,9 @@ export class KNS {
 
         // @ts-ignore
         throw new StatusError({
+          // @ts-ignore
           status: error.status,
+          // @ts-ignore
           transactionId: error.transactionId,
         });
       }
