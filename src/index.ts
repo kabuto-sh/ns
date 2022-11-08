@@ -154,8 +154,7 @@ export class KNS {
       .setContractId(tldContractId)
       .setFunction("purchaseZone", registerParams)
       .setPayableAmount(price)
-      // FIXME: determine the correct gas amount
-      .setGas(2_000_000);
+      .setGas(2860000);
 
     const receipt = await this._executeTransaction(transaction);
 
@@ -300,8 +299,7 @@ export class KNS {
     const transaction = new ContractExecuteTransaction()
       .setContractId(tldContractId)
       .setFunction("setAddress", setParams)
-      // FIXME: determine the correct gas amount
-      .setGas(2_000_000);
+      .setGas(300_000);
 
     await this._executeTransaction(transaction);
 
@@ -344,8 +342,7 @@ export class KNS {
     const transaction = new ContractExecuteTransaction()
       .setContractId(tldContractId)
       .setFunction("setText", setParams)
-      // FIXME: determine the correct gas amount
-      .setGas(2_000_000);
+      .setGas(300_000);
 
     await this._executeTransaction(transaction);
 
@@ -372,8 +369,7 @@ export class KNS {
     const transaction = new ContractExecuteTransaction()
       .setContractId(tldContractId)
       .setFunction("deleteText", delParams)
-      // FIXME: determine the correct gas amount
-      .setGas(2_000_000);
+      .setGas(200_000);
 
     return this._executeTransaction(transaction);
   }
@@ -399,8 +395,7 @@ export class KNS {
     const transaction = new ContractExecuteTransaction()
       .setContractId(tldContractId)
       .setFunction("deleteAddress", delParams)
-      // FIXME: determine the correct gas amount
-      .setGas(2_000_000);
+      .setGas(200_000);
 
     return this._executeTransaction(transaction);
   }
