@@ -87,12 +87,18 @@ export class KNS {
       network: "testnet" | "mainnet";
       resolver?: string;
     } = {
-        network: "testnet",
-      }
+      network: "testnet",
+    }
   ) {
     this._client = Client.forName(options.network);
 
-    this._resolver = axios.create({ baseURL: options.resolver ?? options.network === "testnet" ? "https://ns.testnet.kabuto.sh/api" : "https://testnet.kabuto.sh/api" });
+    this._resolver = axios.create({
+      baseURL:
+        options.resolver ??
+        (options.network === "testnet"
+          ? "https://ns.testnet.kabuto.sh/api"
+          : "https://ns.kabuto.sh/api"),
+    });
 
     this._hederaMirror = axios.create({
       baseURL:
