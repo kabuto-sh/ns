@@ -2,7 +2,7 @@
   "name": "@kabuto-sh/ns",
   "type": "module",
   "version": "0.2.1",
-  "description": "The only full decentralized Web3 name service on Hedera Hashgraph.",
+  "description": "A fully decentralized Web3 name service on Hedera Hashgraph.",
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
   "scripts": {
