@@ -77,6 +77,31 @@ await kns.setAddress(
 );
 ```
 
+### Get Name
+
+Retrieve the metadata for a name, if available.
+Throws `NameNotFoundError` if not available.
+
+```ts
+const {
+  serialNumber,   // serial number in the NFT for this TLD
+  ownerAccountId, // account ID that owns this name
+  expirationTime, // time that the name ownership will expire
+} = await kns.getName("example.hh");
+```
+
+### Get Records
+
+Retrieve all text and address records for a name, if available.
+Throws `NameNotFoundError` if not available.
+
+```ts
+const { 
+  text,     // array of { name, text }
+  address,  // array of { name, coinType, address }
+} = await kns.getAll("example.hh");
+```
+
 ## License
 
 Licensed under the Apache license, version 2.0 ([LICENSE](./LICENSE)
