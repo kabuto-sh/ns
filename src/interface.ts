@@ -95,4 +95,9 @@ export interface IKNS {
    * Gets a text record for a name.
    */
   getText(name: string): Promise<string>;
+
+  /**
+   * Gets the HIP-412 JSON metadata for a name, if available.
+   */
+  getMetadata(name: string): Promise<object>;
 }

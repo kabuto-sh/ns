@@ -35,6 +35,20 @@ interface RawAddressRecord {
   coinType: number;
 }
 
+function handleResolverAxiosError(error: unknown): never {
+  if (axios.isAxiosError(error)) {
+    switch (error.response?.status) {
+      case 404: // no domain registered
+        throw new NameNotFoundError();
+
+      case 400: // domain expired
+        throw new NameNotFoundError();
+    }
+  }
+
+  throw error;
+}
+
 function mapRawAddress(rec: RawAddressRecord): AddressRecord {
   return {
     address: base64Decode(rec.address),
@@ -199,17 +213,7 @@ export class KNS implements IKNS {
       serialNumber = kabutoResp.data.data.tokenSerialNumber;
       expirationTime = new Date(Date.parse(kabutoResp.data.data.expiresAt));
     } catch (error) {
-      if (axios.isAxiosError(error)) {
-        switch (error.response?.status) {
-          case 404: // no domain registered
-            throw new NameNotFoundError();
-
-          case 400: // domain expired
-            throw new NameNotFoundError();
-        }
-      }
-
-      throw error;
+      handleResolverAxiosError(error);
     }
 
     const hederaResp = await this._hederaMirror.get<{
@@ -242,17 +246,7 @@ export class KNS implements IKNS {
         text: data.data.text,
       };
     } catch (error) {
-      if (axios.isAxiosError(error)) {
-        switch (error.response?.status) {
-          case 404: // no domain registered
-            throw new NameNotFoundError();
-
-          case 400: // domain expired
-            throw new NameNotFoundError();
-        }
-      }
-
-      throw error;
+      handleResolverAxiosError(error);
     }
   }
 
@@ -285,17 +279,7 @@ export class KNS implements IKNS {
 
       return mapRawAddress(data.data).address;
     } catch (error) {
-      if (axios.isAxiosError(error)) {
-        switch (error.response?.status) {
-          case 404: // no domain registered
-            throw new NameNotFoundError();
-
-          case 400: // domain expired
-            throw new NameNotFoundError();
-        }
-      }
-
-      throw error;
+      handleResolverAxiosError(error);
     }
   }
 
@@ -319,17 +303,22 @@ export class KNS implements IKNS {
 
       return data.data.text;
     } catch (error) {
-      if (axios.isAxiosError(error)) {
-        switch (error.response?.status) {
-          case 404: // no domain registered
-            throw new NameNotFoundError();
+      handleResolverAxiosError(error);
+    }
+  }
 
-          case 400: // domain expired
-            throw new NameNotFoundError();
-        }
-      }
+  /**
+   * Gets the HIP-412 JSON metadata for a name, if available.
+   */
+  async getMetadata(name: string): Promise<object> {
+    try {
+      const { data } = await this._resolver.get<object>(
+        `/name/${name}/metadata`
+      );
 
-      throw error;
+      return data;
+    } catch (error) {
+      handleResolverAxiosError(error);
     }
   }
 
