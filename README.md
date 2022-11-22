@@ -77,6 +77,13 @@ await kns.setAddress(
 );
 ```
 
+### Set Hedera Address Record
+
+```ts
+// example.hh (HBAR) --> _
+await kns.setHederaAddress("example.hh", "0.0.2020");
+```
+
 ### Get Name
 
 Retrieve the metadata for a name, if available.
@@ -84,7 +91,7 @@ Throws `NameNotFoundError` if not available.
 
 ```ts
 const {
-  serialNumber,   // serial number in the NFT for this TLD
+  serialNumber, // serial number in the NFT for this TLD
   ownerAccountId, // account ID that owns this name
   expirationTime, // time that the name ownership will expire
 } = await kns.getName("example.hh");
@@ -96,10 +103,40 @@ Retrieve all text and address records for a name, if available.
 Throws `NameNotFoundError` if not available.
 
 ```ts
-const { 
-  text,     // array of { name, text }
-  address,  // array of { name, coinType, address }
+const {
+  text, // array of { name, text }
+  address, // array of { name, coinType, address }
 } = await kns.getAll("example.hh");
+```
+
+### Get Text Record
+
+Retrieve a text for a name, if available.
+Throws `NameNotFoundError` if not available.
+
+```ts
+const text = await kns.getText("example.hh");
+```
+
+### Get Address Record
+
+Retrieve an address record for a name and coin type, if available.
+Throws `NameNotFoundError` if not available.
+
+```ts
+// address is an Uint8Array
+// 3030 is Hedera
+const address = await kns.getAddress("example.hh", 3030);
+```
+
+### Get Hedera Address Record
+
+Retrieve a HBAR address record for a name, if available.
+Throws `NameNotFoundError` if not available.
+
+```ts
+// address is an @hashgraph/sdk.AccountId
+const address = await kns.getHederaAddress("example.hh");
 ```
 
 ## License
