@@ -26,22 +26,21 @@ import {
 import { base64Decode } from "./base64.js";
 import { utf8Encode } from "./utf8.js";
 import { toBytes32 } from "./bytes.js";
+import type { IKNS } from "./interface.js";
+import type { AddressRecord, Name, TextRecord } from "./models.js";
 
-export interface AddressRecord {
+interface RawAddressRecord {
+  address: string;
   name: string;
   coinType: number;
-  address: Uint8Array;
 }
 
-export interface TextRecord {
-  name: string;
-  text: string;
-}
-
-export interface Name {
-  serialNumber: number;
-  ownerAccountId: AccountId;
-  expirationTime: Date;
+function mapRawAddress(rec: RawAddressRecord): AddressRecord {
+  return {
+    address: base64Decode(rec.address),
+    name: rec.name,
+    coinType: rec.coinType,
+  };
 }
 
 export class NameNotFoundError extends Error {
@@ -63,7 +62,7 @@ export class SignerRejectedError extends Error {
   }
 }
 
-export class KNS {
+export class KNS implements IKNS {
   private _signer?: Signer;
 
   private readonly _client: Client;
@@ -230,12 +229,6 @@ export class KNS {
   async getAll(
     name: string
   ): Promise<{ text: TextRecord[]; address: AddressRecord[] }> {
-    interface RawAddressRecord {
-      address: string;
-      name: string;
-      coinType: number;
-    }
-
     try {
       const { data } = await this._resolver.get<{
         data: {
@@ -244,16 +237,87 @@ export class KNS {
         };
       }>(`/name/${name}/record`);
 
-      const address = data.data.address.map((rec) => ({
-        address: base64Decode(rec.address),
-        name: rec.name,
-        coinType: rec.coinType,
-      }));
-
       return {
-        address,
+        address: data.data.address.map((rec) => mapRawAddress(rec)),
         text: data.data.text,
       };
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        switch (error.response?.status) {
+          case 404: // no domain registered
+            throw new NameNotFoundError();
+
+          case 400: // domain expired
+            throw new NameNotFoundError();
+        }
+      }
+
+      throw error;
+    }
+  }
+
+  /**
+   * Gets all address records for a name.
+   */
+  async getAllAddress(name: string): Promise<AddressRecord[]> {
+    const { address } = await this.getAll(name);
+
+    return address;
+  }
+
+  /**
+   * Gets all text records for a name.
+   */
+  async getAllText(name: string): Promise<TextRecord[]> {
+    const { text } = await this.getAll(name);
+
+    return text;
+  }
+
+  /**
+   * Gets the address record for a name and coin type.
+   */
+  async getAddress(name: string, coinType: number): Promise<Uint8Array> {
+    try {
+      const { data } = await this._resolver.get<{
+        data: RawAddressRecord;
+      }>(`/name/${name}/record/address/${coinType}`);
+
+      return mapRawAddress(data.data).address;
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        switch (error.response?.status) {
+          case 404: // no domain registered
+            throw new NameNotFoundError();
+
+          case 400: // domain expired
+            throw new NameNotFoundError();
+        }
+      }
+
+      throw error;
+    }
+  }
+
+  /**
+   * Gets the HBAR address record for a name.
+   */
+  async getHederaAddress(name: string): Promise<AccountId> {
+    const address = await this.getAddress(name, 3030);
+
+    return this.deserializeHederaAddress(address);
+  }
+
+  /**
+   * Gets a text record for a name.
+   */
+  async getText(name: string): Promise<string> {
+    try {
+      const { data } = await this._resolver.get<{
+        data: TextRecord;
+      }>(`/name/${name}/record/text`);
+
+      return data.data.text;
     } catch (error) {
       if (axios.isAxiosError(error)) {
         switch (error.response?.status) {
@@ -360,7 +424,7 @@ export class KNS {
   /**
    * Removes a text record for a name.
    */
-  async removeText(name: string): Promise<TransactionReceipt> {
+  async removeText(name: string): Promise<void> {
     const parsedName = parseRecordName(name);
     const nameSerial = await this._getNameSerial(parsedName);
     const tldContractId = await this._getTldContractId(
@@ -376,16 +440,13 @@ export class KNS {
       .setFunction("deleteText", delParams)
       .setGas(200_000);
 
-    return this._executeTransaction(transaction);
+    await this._executeTransaction(transaction);
   }
 
   /**
    * Removes an address record for a name and coin type.
    */
-  async removeAddress(
-    name: string,
-    coinType: number
-  ): Promise<TransactionReceipt> {
+  async removeAddress(name: string, coinType: number): Promise<void> {
     const parsedName = parseRecordName(name);
     const nameSerial = await this._getNameSerial(parsedName);
     const tldContractId = await this._getTldContractId(
@@ -402,7 +463,7 @@ export class KNS {
       .setFunction("deleteAddress", delParams)
       .setGas(200_000);
 
-    return this._executeTransaction(transaction);
+    await this._executeTransaction(transaction);
   }
 
   private _requireSigner() {
