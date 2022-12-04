@@ -57,6 +57,8 @@ function mapRawAddress(rec: RawAddressRecord): AddressRecord {
   };
 }
 
+export type { AddressRecord, Name, TextRecord } from "./models.js";
+
 export class NameNotFoundError extends Error {
   constructor() {
     super();
