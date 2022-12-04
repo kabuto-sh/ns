@@ -67,7 +67,9 @@ describe("serializeAddress", () => {
   });
 
   it("can deserialize a Hedera account ID that was serialized via toBytes", () => {
-    let reverseAccountId = deserializeHederaAddress(hexDecode("08321014189008"));
+    let reverseAccountId = deserializeHederaAddress(
+      hexDecode("08321014189008")
+    );
 
     expect(reverseAccountId.num.toNumber()).toEqual(1040);
     expect(reverseAccountId.shard.toNumber()).toEqual(50);
@@ -79,7 +81,9 @@ describe("serializeAddress", () => {
     let address = serializeAddress(3030, accountId.toString());
 
     expect(address.byteLength).toEqual(20);
-    expect(hexEncode(address)).toEqual("0000003200000000000000140000000000000410");
+    expect(hexEncode(address)).toEqual(
+      "0000003200000000000000140000000000000410"
+    );
 
     let reverseAccountId = deserializeHederaAddress(address);
 
