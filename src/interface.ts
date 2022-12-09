@@ -82,9 +82,14 @@ export interface IKNS {
   getAllText(name: string): Promise<TextRecord[]>;
 
   /**
-   * Gets the address record for a name and coin type.
+   * Gets the address for a name and coin type.
    */
-  getAddress(name: string, coinType: number): Promise<Uint8Array>;
+  getAddress(name: string, coinType: number): Promise<string>;
+
+  /**
+   * Gets the address bytes for a name and coin type.
+   */
+  getAddressBytes(name: string, coinType: number): Promise<Uint8Array>;
 
   /**
    * Gets the HBAR address record for a name.

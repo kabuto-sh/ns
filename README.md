@@ -124,7 +124,7 @@ Retrieve an address record for a name and coin type, if available.
 Throws `NameNotFoundError` if not available.
 
 ```ts
-// address is an Uint8Array
+// address is x.y.z
 // 3030 is Hedera
 const address = await kns.getAddress("example.hh", 3030);
 ```

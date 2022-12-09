@@ -2,8 +2,11 @@ import type { AccountId } from "@hashgraph/sdk";
 
 export interface AddressRecord {
   name: string;
+
   coinType: number;
-  address: Uint8Array;
+
+  address: string;
+  addressBytes: Uint8Array;
 }
 
 export interface TextRecord {

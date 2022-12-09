@@ -50,8 +50,11 @@ function handleResolverAxiosError(error: unknown): never {
 }
 
 function mapRawAddress(rec: RawAddressRecord): AddressRecord {
+  const addressBytes = base64Decode(rec.address);
+
   return {
-    address: base64Decode(rec.address),
+    addressBytes,
+    address: formatAddress(rec.coinType, addressBytes),
     name: rec.name,
     coinType: rec.coinType,
   };
@@ -271,27 +274,36 @@ export class KNS implements IKNS {
   }
 
   /**
-   * Gets the address record for a name and coin type.
+   * Gets the address bytes for a name and coin type.
    */
-  async getAddress(name: string, coinType: number): Promise<Uint8Array> {
+  async getAddressBytes(name: string, coinType: number): Promise<Uint8Array> {
     try {
       const { data } = await this._resolver.get<{
         data: RawAddressRecord;
       }>(`/name/${name}/record/address/${coinType}`);
 
-      return mapRawAddress(data.data).address;
+      return base64Decode(data.data.address);
     } catch (error) {
       handleResolverAxiosError(error);
     }
   }
 
   /**
+   * Gets the address for a name and coin type.
+   */
+  async getAddress(name: string, coinType: number): Promise<string> {
+    const address = await this.getAddressBytes(name, coinType);
+
+    return formatAddress(coinType, address);
+  }
+
+  /**
    * Gets the HBAR address record for a name.
    */
   async getHederaAddress(name: string): Promise<AccountId> {
-    const address = await this.getAddress(name, 3030);
+    const address = await this.getAddressBytes(name, 3030);
 
-    return this.deserializeHederaAddress(address);
+    return deserializeHederaAddress(address);
   }
 
   /**
@@ -366,22 +378,9 @@ export class KNS implements IKNS {
     return {
       coinType,
       name: parsedName.recordName,
-      address: serAddress,
+      addressBytes: serAddress,
+      address: formatAddress(coinType, serAddress),
     };
-  }
-
-  /**
-   * Deserializes a Hedera AccountId from the passed address bytes (from a generic AddressRecord).
-   */
-  deserializeHederaAddress(address: Uint8Array): AccountId {
-    return deserializeHederaAddress(address);
-  }
-
-  /**
-   * Formats the passed address bytes (from a generic AddressRecord) for display.
-   */
-  formatAddress(coinType: number, address: Uint8Array): string {
-    return formatAddress(coinType, address);
   }
 
   /**
