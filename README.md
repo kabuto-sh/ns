@@ -139,6 +139,24 @@ Throws `NameNotFoundError` if not available.
 const address = await kns.getHederaAddress("example.hh");
 ```
 
+### Find Names by Address
+
+Lookup names for a given address record and coin type.
+
+```ts
+// returns array of names as x.y
+const names: string[] = await kns.findNamesByAddress(3030, "0.0.1001");
+```
+
+### Find Names by Hedera Address
+
+Lookup names for a given HNAR address record.
+
+```ts
+// returns array of names as x.y
+const names: string[] = await kns.findNamesByHederaAddress(myAccountId);
+```
+
 ## License
 
 Licensed under the Apache license, version 2.0 ([LICENSE](./LICENSE)

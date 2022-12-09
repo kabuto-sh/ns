@@ -60,6 +60,19 @@ export interface IKNS {
   removeText(name: string): Promise<void>;
 
   /**
+   * Searches for names with the given address record.
+   */
+  findNamesByAddress(
+    coinType: number,
+    address: string | Uint8Array
+  ): Promise<string[]>;
+
+  /**
+   * Searches for names with the given address record.
+   */
+  findNamesByHederaAddress(address: AccountId): Promise<string[]>;
+
+  /**
    * Gets the registration information for a name, if registered.
    */
   getName(name: string): Promise<Name>;

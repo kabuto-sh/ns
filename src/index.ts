@@ -456,6 +456,32 @@ export class KNS implements IKNS {
     await this._executeTransaction(transaction);
   }
 
+  /**
+   * Searches for names with the given address record.
+   */
+  async findNamesByAddress(
+    coinType: number,
+    address: string | Uint8Array
+  ): Promise<string[]> {
+    const fmtAddress = formatAddress(
+      coinType,
+      serializeAddress(coinType, address)
+    );
+
+    const { data } = await this._resolver.get<{
+      data: Array<{ domain: string; parent: string }>;
+    }>(`/record/address/${coinType}/${fmtAddress}/name`);
+
+    return data.data.map((rec) => `${rec.domain}.${rec.parent}`);
+  }
+
+  /**
+   * Searches for names with the given address record.
+   */
+  findNamesByHederaAddress(address: AccountId): Promise<string[]> {
+    return this.findNamesByAddress(3030, address.toString());
+  }
+
   private _requireSigner() {
     if (this._signer == null) {
       throw Error("signer required, call setSigner before calling this method");
