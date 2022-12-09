@@ -11,6 +11,8 @@ export function formatAddress(coinType: number, address: Uint8Array): string {
       return deserializeBitcoinAddress(address);
 
     case 60: // ETH
+    case 714: // BNB (Binance ..)
+    case 9006: // BSC (Binance ..)
       return deserializeEthereumAddress(address);
 
     default:
@@ -43,6 +45,8 @@ export function serializeAddress(
         break;
 
       case 60: // ETH
+      case 714: // BNB (Binance ..)
+      case 9006: // BSC (Binance ..)
         addressBytes = hexDecode(address); // always 20 bytes
         break;
 
