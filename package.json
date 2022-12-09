@@ -23,7 +23,7 @@
     "vitest": "^0.25.6"
   },
   "dependencies": {
-    "@hashgraph/sdk": "^2.19.0",
+    "@hashgraph/sdk": "^2.18.0",
     "axios": "^1.2.1",
     "bignumber.js": "^9.1.1",
     "date-fns": "^2.29.3"

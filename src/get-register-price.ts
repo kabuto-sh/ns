@@ -10,7 +10,7 @@ function getByteLengthAndIsAscii(value: string): [number, boolean] {
   const bytes = utf8Encode(value);
 
   for (len = 0; i < bytes.length; len++) {
-    const b = bytes.at(i)!;
+    const b = bytes[i];
 
     if (b < 0x80) {
       i += 1;
