@@ -1,3 +1,12 @@
+function unaliasTopLevelDomain(tld: string): string {
+  // alias .h to .ℏ
+  if (tld === "h") {
+    tld = "ℏ";
+  }
+
+  return tld;
+}
+
 export interface ParsedName {
   secondLevelDomain: string;
   topLevelDomain: string;
@@ -12,7 +21,7 @@ export function parseName(name: string): ParsedName {
 
   return {
     secondLevelDomain: nameParts[0],
-    topLevelDomain: nameParts[1],
+    topLevelDomain: unaliasTopLevelDomain(nameParts[1]),
   };
 }
 
@@ -36,6 +45,6 @@ export function parseRecordName(recordName: string): ParsedRecordName {
   return {
     recordName: name,
     secondLevelDomain: nameParts[nameParts.length - 2],
-    topLevelDomain: nameParts[nameParts.length - 1],
+    topLevelDomain: unaliasTopLevelDomain(nameParts[nameParts.length - 1]),
   };
 }
