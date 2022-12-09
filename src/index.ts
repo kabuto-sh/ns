@@ -36,8 +36,8 @@ interface RawAddressRecord {
 }
 
 function handleResolverAxiosError(error: unknown): never {
-  if (axios.isAxiosError(error)) {
-    switch (error.response?.status) {
+  if (axios.isAxiosError(error) && error.response != null) {
+    switch (error.response.status) {
       case 404: // no domain registered
         throw new NameNotFoundError();
 
