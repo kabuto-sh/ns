@@ -110,6 +110,9 @@ export class KNS implements IKNS {
   ) {
     this._client = Client.forName(options.network);
 
+    // increase max hbar fee to 8h
+    this._client.setDefaultMaxTransactionFee(new Hbar(8));
+
     this._resolver = axios.create({
       baseURL:
         options.resolver ??
