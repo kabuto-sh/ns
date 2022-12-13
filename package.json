@@ -3,11 +3,13 @@
   "type": "module",
   "version": "0.5.5",
   "description": "A fully decentralized Web3 name service on Hedera Hashgraph.",
-  "main": "lib/index.js",
+  "main": "dist/index.js",
+  "module": "lib/index.js",
+  "browser": "lib/index.js",
   "types": "lib/index.d.ts",
   "scripts": {
     "fmt": "prettier --write .",
-    "build": "tsc",
+    "build": "tsc && node scripts/bundle.js",
     "prepare": "run-s build",
     "test": "vitest run --coverage"
   },
@@ -17,6 +19,8 @@
   "devDependencies": {
     "@types/long": "^4.0.0",
     "@vitest/coverage-c8": "^0.25.6",
+    "esbuild": "^0.16.5",
+    "esbuild-node-externals": "^1.6.0",
     "npm-run-all": "^4.1.5",
     "prettier": "^2.8.1",
     "typescript": "^4.9.4",
