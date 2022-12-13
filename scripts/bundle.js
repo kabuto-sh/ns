@@ -1,5 +1,5 @@
-import esbuild from "esbuild";
-import { nodeExternalsPlugin } from "esbuild-node-externals";
+const esbuild = require("esbuild");
+const { nodeExternalsPlugin } = require("esbuild-node-externals");
 
 esbuild.build({
   entryPoints: ['lib/index.js'],
