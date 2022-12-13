@@ -1,6 +1,6 @@
 {
   "name": "@kabuto-sh/ns",
-  "version": "0.6.1",
+  "version": "0.6.2",
   "description": "A fully decentralized Web3 name service on Hedera Hashgraph.",
   "main": "dist/index.js",
   "module": "lib/index.js",
@@ -27,7 +27,7 @@
   },
   "dependencies": {
     "@hashgraph/sdk": "^2.18.0",
-    "axios": "^1.2.1",
+    "axios": "^0.27.2",
     "bignumber.js": "^9.1.1",
     "date-fns": "^2.29.3"
   }

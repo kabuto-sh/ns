@@ -4,7 +4,7 @@ specifiers:
   '@hashgraph/sdk': ^2.18.0
   '@types/long': ^4.0.0
   '@vitest/coverage-c8': ^0.25.6
-  axios: ^1.2.1
+  axios: ^0.27.2
   bignumber.js: ^9.1.1
   date-fns: ^2.29.3
   esbuild: ^0.16.5
@@ -16,7 +16,7 @@ specifiers:
 
 dependencies:
   '@hashgraph/sdk': 2.19.0
-  axios: 1.2.1
+  axios: 0.27.2
   bignumber.js: 9.1.1
   date-fns: 2.29.3
 
@@ -491,16 +491,6 @@ packages:
     dependencies:
       follow-redirects: 1.15.2
       form-data: 4.0.0
-    transitivePeerDependencies:
-      - debug
-    dev: false
-
-  /axios/1.2.1:
-    resolution: {integrity: sha512-I88cFiGu9ryt/tfVEi4kX2SITsvDddTajXTOFmt2uK1ZVA8LytjtdeyefdQWEf5PU8w+4SSJDoYnggflB5tW4A==}
-    dependencies:
-      follow-redirects: 1.15.2
-      form-data: 4.0.0
-      proxy-from-env: 1.1.0
     transitivePeerDependencies:
       - debug
     dev: false
@@ -1577,10 +1567,6 @@ packages:
       '@protobufjs/utf8': 1.1.0
       '@types/node': 18.11.12
       long: 5.2.1
-    dev: false
-
-  /proxy-from-env/1.1.0:
-    resolution: {integrity: sha512-D+zkORCbA9f1tdWRK0RaCR3GPv50cMxcrz4X8k5LTSUD1Dkw47mKJEZQNunItRTkWwgtaUSo1RVFRIG9ZXiFYg==}
     dev: false
 
   /read-pkg/3.0.0:
