@@ -15,7 +15,13 @@ import {
 import axios, { type Axios } from "axios";
 import BigNumber from "bignumber.js";
 import { getRegisterPriceUsd } from "./get-register-price.js";
-import { ParsedRecordName, parseName, parseRecordName } from "./parse-name.js";
+import {
+  normalizeName,
+  normalizeRecordName,
+  ParsedRecordName,
+  parseName,
+  parseRecordName,
+} from "./parse-name.js";
 import { addYears } from "date-fns";
 import {
   deserializeHederaAddress,
@@ -215,7 +221,7 @@ export class KNS implements IKNS {
           tokenId: string;
           tokenSerialNumber: number;
         };
-      }>(`/name/${name}`);
+      }>(`/name/${encodeURIComponent(normalizeName(name))}`);
 
       tokenId = kabutoResp.data.data.tokenId;
       serialNumber = kabutoResp.data.data.tokenSerialNumber;
@@ -247,7 +253,7 @@ export class KNS implements IKNS {
           address: RawAddressRecord[];
           text: TextRecord[];
         };
-      }>(`/name/${name}/record`);
+      }>(`/name/${encodeURIComponent(normalizeName(name))}/record`);
 
       return {
         address: data.data.address.map((rec) => mapRawAddress(rec)),
@@ -281,9 +287,12 @@ export class KNS implements IKNS {
    */
   async getAddressBytes(name: string, coinType: number): Promise<Uint8Array> {
     try {
+      const nameComponent = encodeURIComponent(normalizeRecordName(name));
+      const url = `/name/${nameComponent}/record/address/${coinType}`;
+
       const { data } = await this._resolver.get<{
         data: RawAddressRecord;
-      }>(`/name/${name}/record/address/${coinType}`);
+      }>(url);
 
       return base64Decode(data.data.address);
     } catch (error) {
@@ -316,7 +325,7 @@ export class KNS implements IKNS {
     try {
       const { data } = await this._resolver.get<{
         data: TextRecord;
-      }>(`/name/${name}/record/text`);
+      }>(`/name/${encodeURIComponent(normalizeRecordName(name))}/record/text`);
 
       return data.data.text;
     } catch (error) {
@@ -330,7 +339,7 @@ export class KNS implements IKNS {
   async getMetadata(name: string): Promise<object> {
     try {
       const { data } = await this._resolver.get<object>(
-        `/name/${name}/metadata`
+        `/name/${encodeURIComponent(normalizeName(name))}/metadata`
       );
 
       return data;

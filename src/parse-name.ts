@@ -25,6 +25,14 @@ export function parseName(name: string): ParsedName {
   };
 }
 
+export function formatName(parsed: ParsedName): string {
+  return `${parsed.secondLevelDomain}.${parsed.topLevelDomain}`;
+}
+
+export function normalizeName(name: string): string {
+  return formatName(parseName(name));
+}
+
 export interface ParsedRecordName {
   recordName: string;
   secondLevelDomain: string;
@@ -47,4 +55,18 @@ export function parseRecordName(recordName: string): ParsedRecordName {
     secondLevelDomain: nameParts[nameParts.length - 2],
     topLevelDomain: unaliasTopLevelDomain(nameParts[nameParts.length - 1]),
   };
+}
+
+export function formatRecordName(parsed: ParsedRecordName): string {
+  let name = `${parsed.secondLevelDomain}.${parsed.topLevelDomain}`;
+
+  if (parsed.recordName.length > 0) {
+    name = parsed.recordName + "." + name;
+  }
+
+  return name;
+}
+
+export function normalizeRecordName(recordName: string): string {
+  return formatRecordName(parseRecordName(recordName));
 }
