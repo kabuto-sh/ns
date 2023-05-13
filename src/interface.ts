@@ -3,6 +3,11 @@ import type BigNumber from "bignumber.js";
 import type { AddressRecord, Name, TextRecord } from "./models.js";
 
 export interface IKNS {
+  /** 
+   * Closes any resources used by this name service client.
+   */
+  close(): void;
+
   /**
    * Sets the passed signer to be used to sign any generated transactions.
    * Must be called before any write method is called.

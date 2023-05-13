@@ -135,6 +135,13 @@ export class KNS implements IKNS {
     });
   }
 
+  /** 
+   * Closes any resources used by this name service client.
+   */
+  close() {
+    this._client.close();
+  }
+
   /**
    * Sets the passed signer to be used to sign any generated transactions.
    * Must be called before any write method is called.
