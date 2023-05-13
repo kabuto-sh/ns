@@ -1,0 +1,7 @@
+lockfileVersion: 5.4
+
+specifiers:
+  '@kabuto-sh/ns': link:..
+
+dependencies:
+  '@kabuto-sh/ns': link:..
