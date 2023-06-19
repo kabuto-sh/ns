@@ -135,7 +135,7 @@ export class KNS implements IKNS {
     });
   }
 
-  /** 
+  /**
    * Closes any resources used by this name service client.
    */
   close() {
@@ -549,7 +549,7 @@ export class KNS implements IKNS {
   ): Promise<TransactionReceipt> {
     this._requireSigner();
 
-    await this._signer!.populateTransaction(transaction);
+    await transaction.freezeWithSigner(this._signer!);
 
     const transactionId = transaction.transactionId;
     let response: TransactionResponse | null;

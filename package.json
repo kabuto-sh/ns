@@ -1,6 +1,6 @@
 {
   "name": "@kabuto-sh/ns",
-  "version": "0.8.0",
+  "version": "0.9.0",
   "description": "A fully decentralized Web3 name service on Hedera Hashgraph.",
   "main": "dist/index.js",
   "module": "lib/index.js",
@@ -18,6 +18,7 @@
   "devDependencies": {
     "@types/long": "^4.0.0",
     "@vitest/coverage-c8": "^0.32.2",
+    "@vitest/coverage-v8": "^0.32.2",
     "esbuild": "^0.18.4",
     "esbuild-node-externals": "^1.7.0",
     "npm-run-all": "^4.1.5",
