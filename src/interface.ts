@@ -3,7 +3,7 @@ import type BigNumber from "bignumber.js";
 import type { AddressRecord, Name, TextRecord } from "./models.js";
 
 export interface IKNS {
-  /** 
+  /**
    * Closes any resources used by this name service client.
    */
   close(): void;
@@ -25,6 +25,17 @@ export interface IKNS {
    * Does not check if the name is available.
    */
   getRegisterPriceHbar(name: string): Promise<Hbar>;
+
+  /**
+   * Gets if the signer is associated for the name.
+   * Each top-level-domain (TLD) needs to be associated.
+   */
+  isAssociatedForName(name: string): Promise<boolean>;
+
+  /**
+   * Associates the signer to the top-level-domain (TLD) of the name.
+   */
+  associateName(name: string): Promise<void>;
 
   /**
    * Registers a new name to the current signer for the desired duration.

@@ -12,6 +12,7 @@ import {
   TransactionResponse,
   StatusError,
   TokenId,
+  TokenAssociateTransaction,
 } from "@hashgraph/sdk";
 import axios, { type Axios } from "axios";
 import BigNumber from "bignumber.js";
@@ -19,6 +20,7 @@ import { getRegisterPriceUsd } from "./get-register-price.js";
 import {
   normalizeName,
   normalizeRecordName,
+  ParsedName,
   ParsedRecordName,
   parseName,
   parseRecordName,
@@ -181,6 +183,57 @@ export class KNS implements IKNS {
       .decimalPlaces(4, BigNumber.ROUND_UP);
 
     return new Hbar(priceHbar);
+  }
+
+  async _getTokenIdForName(parsedName: ParsedName): Promise<TokenId> {
+    try {
+      const nameId = await this._getNameId(parsedName);
+      return nameId.tokenId;
+    } catch (error) {
+      if (error instanceof NameNotFoundError) {
+        const tldId = await this._getV2TldId(parsedName.topLevelDomain);
+        return tldId.tokenId;
+      } else {
+        throw error;
+      }
+    }
+  }
+
+  /**
+   * Gets if the signer is associated for the name.
+   * Each top-level-domain (TLD) needs to be associated.
+   */
+  async isAssociatedForName(name: string): Promise<boolean> {
+    const parsedName = parseName(name);
+    const tokenId = (await this._getTokenIdForName(parsedName)).toString();
+
+    const hederaResp = await this._hederaMirror.get<{
+      balance: {
+        tokens: Array<{
+          token_id: string;
+        }>;
+      };
+    }>(`/api/v1/accounts/${this._signer!.getAccountId()}`);
+
+    return (
+      hederaResp.data.balance.tokens.findIndex(
+        (token) => token.token_id === tokenId
+      ) >= 0
+    );
+  }
+
+  /**
+   * Associates the signer to the top-level-domain (TLD) of the name.
+   */
+  async associateName(name: string): Promise<void> {
+    const parsedName = parseName(name);
+    const tokenId = await this._getTokenIdForName(parsedName);
+
+    const transaction = new TokenAssociateTransaction()
+      .setAccountId(this._signer!.getAccountId())
+      .setTokenIds([tokenId]);
+
+    await this._executeTransaction(transaction);
   }
 
   /**
@@ -546,24 +599,28 @@ export class KNS implements IKNS {
       return id;
     }
 
-    const { data } = await this._resolver.get<{
-      data: {
-        v2ContractId: string;
-        v2TokenId: string;
-      };
-    }>(`/name/.${tld}`);
+    try {
+      const { data } = await this._resolver.get<{
+        data: {
+          v2ContractId: string;
+          v2TokenId: string;
+        };
+      }>(`/name/.${tld}`);
 
-    const contractId = ContractId.fromString(data.data.v2ContractId);
-    const tokenId = TokenId.fromString(data.data.v2TokenId);
+      const contractId = ContractId.fromString(data.data.v2ContractId);
+      const tokenId = TokenId.fromString(data.data.v2TokenId);
 
-    id = { contractId, tokenId };
+      id = { contractId, tokenId };
 
-    this._v2TldIds.set(tld, id);
+      this._v2TldIds.set(tld, id);
 
-    return id;
+      return id;
+    } catch (error) {
+      handleResolverAxiosError(error);
+    }
   }
 
-  private async _getNameId(parsedName: ParsedRecordName): Promise<NameId> {
+  private async _getNameId(parsedName: ParsedName): Promise<NameId> {
     const name = `${parsedName.secondLevelDomain}.${parsedName.topLevelDomain}`;
     let nameId = this._nameIds.get(name);
 

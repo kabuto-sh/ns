@@ -20,6 +20,15 @@ const softwareWallet = new Wallet(
 
 kns.setSigner(softwareWallet);
 
+// ask if we are associated for the domain name
+// each top-level-domain (TLD) requires a separate token association
+const isAssociated = await kns.isAssociatedForName("example.hh");
+
+if (!isAssociated) {
+  // if we are not associated, associate now (to the top-level-domain, `.h`)
+  await kns.associateName("example.hh");
+}
+
 // ask for the HBAR address for a domain name
 await kns.registerName("example.hh", { years: 1 });
 
