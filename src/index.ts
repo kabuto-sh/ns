@@ -11,6 +11,7 @@ import {
   TransactionReceiptQuery,
   TransactionResponse,
   StatusError,
+  TokenId,
 } from "@hashgraph/sdk";
 import axios, { type Axios } from "axios";
 import BigNumber from "bignumber.js";
@@ -39,6 +40,13 @@ interface RawAddressRecord {
   address: string;
   name: string;
   coinType: number;
+}
+
+interface NameId {
+  tokenId: TokenId;
+  contractId: ContractId;
+  serialNumber: number;
+  version: 1 | 2;
 }
 
 function handleResolverAxiosError(error: unknown): never {
@@ -96,11 +104,14 @@ export class KNS implements IKNS {
 
   private readonly _hederaMirror: Axios;
 
-  // cache of TLDs (ex. "hh") to contract IDs
-  private readonly _tldContractIds: Map<string, ContractId> = new Map();
+  // cache of TLDs (ex. "hh") to v2 contract and token IDs (for purchasing)
+  private readonly _v2TldIds: Map<
+    string,
+    { tokenId: TokenId; contractId: ContractId }
+  > = new Map();
 
-  // cache of DOMAINS (ex. "foo.hh") to serial numbers
-  private readonly _domainSerials: Map<string, number> = new Map();
+  // cache of DOMAINS (ex. "foo.hh") to serial numbers, contract, and token IDs
+  private readonly _nameIds: Map<string, NameId> = new Map();
 
   // cache of HBAR to USD
   private _hbarPrice: BigNumber | null = null;
@@ -178,9 +189,7 @@ export class KNS implements IKNS {
    */
   async registerName(name: string, duration: { years: number }): Promise<Name> {
     const parsedName = parseName(name);
-    const tldContractId = await this._getTldContractId(
-      parsedName.topLevelDomain
-    );
+    const tldId = await this._getV2TldId(parsedName.topLevelDomain);
 
     const unitPrice = await this.getRegisterPriceHbar(name);
     const price = unitPrice.toBigNumber().multipliedBy(duration.years);
@@ -190,7 +199,7 @@ export class KNS implements IKNS {
       .addUint256(duration.years);
 
     const transaction = new ContractExecuteTransaction()
-      .setContractId(tldContractId)
+      .setContractId(tldId.contractId)
       .setFunction("purchaseZone", registerParams)
       .setPayableAmount(price)
       .setGas(2860000);
@@ -202,12 +211,18 @@ export class KNS implements IKNS {
       .map((it) => it.serials[0])[0]
       .toNumber();
 
-    this._domainSerials.set(name, serialNumber);
+    const nameId: NameId = {
+      serialNumber,
+      version: 2,
+      ...tldId,
+    };
+
+    this._nameIds.set(name, nameId);
 
     return {
       ownerAccountId: this._signer!.getAccountId(),
-      serialNumber,
       expirationTime: new Date(addYears(Date.now(), duration.years)),
+      ...nameId,
     };
   }
 
@@ -216,22 +231,37 @@ export class KNS implements IKNS {
    */
   async getName(name: string): Promise<Name> {
     let tokenId: string;
+    let contractId: string;
     let serialNumber: number;
     let expirationTime: Date;
+    let version: 1 | 2;
 
     try {
       const kabutoResp = await this._resolver.get<{
         data: {
-          contractId: string;
+          v1ContractId: string;
+          v2ContractId: string;
           expiresAt: string;
           maxRecords: number;
-          tokenId: string;
+          v1TokenId: string;
+          v2TokenId: string;
           tokenSerialNumber: number;
         };
       }>(`/name/${encodeURIComponent(normalizeName(name))}`);
 
-      tokenId = kabutoResp.data.data.tokenId;
       serialNumber = kabutoResp.data.data.tokenSerialNumber;
+
+      if (serialNumber < 0) {
+        // negative serial numbers use v2 IDs
+        version = 2;
+        tokenId = kabutoResp.data.data.v2TokenId;
+        contractId = kabutoResp.data.data.v2ContractId;
+      } else {
+        version = 1;
+        tokenId = kabutoResp.data.data.v1TokenId;
+        contractId = kabutoResp.data.data.v1ContractId;
+      }
+
       expirationTime = new Date(Date.parse(kabutoResp.data.data.expiresAt));
     } catch (error) {
       handleResolverAxiosError(error);
@@ -245,6 +275,9 @@ export class KNS implements IKNS {
       ownerAccountId: AccountId.fromString(hederaResp.data.account_id),
       serialNumber,
       expirationTime,
+      contractId: ContractId.fromString(contractId),
+      tokenId: TokenId.fromString(tokenId),
+      version,
     };
   }
 
@@ -374,21 +407,20 @@ export class KNS implements IKNS {
     address: Uint8Array | string
   ): Promise<AddressRecord> {
     const parsedName = parseRecordName(name);
-    const nameSerial = await this._getNameSerial(parsedName);
-    const tldContractId = await this._getTldContractId(
-      parsedName.topLevelDomain
-    );
+    const nameId = await this._getNameId(parsedName);
+    const serialNumber =
+      nameId.version === 1 ? nameId.serialNumber : -nameId.serialNumber;
 
     const serAddress = serializeAddress(coinType, address);
 
     const setParams = new ContractFunctionParameters()
-      .addInt64(nameSerial as unknown as BigNumber)
+      .addInt64(serialNumber as unknown as BigNumber)
       .addBytes32(toBytes32(utf8Encode(parsedName.recordName)))
       .addUint32(coinType)
       .addBytes(serAddress);
 
     const transaction = new ContractExecuteTransaction()
-      .setContractId(tldContractId)
+      .setContractId(nameId.contractId)
       .setFunction("setAddress", setParams)
       .setGas(300_000);
 
@@ -407,18 +439,17 @@ export class KNS implements IKNS {
    */
   async setText(name: string, text: string): Promise<TextRecord> {
     const parsedName = parseRecordName(name);
-    const nameSerial = await this._getNameSerial(parsedName);
-    const tldContractId = await this._getTldContractId(
-      parsedName.topLevelDomain
-    );
+    const nameId = await this._getNameId(parsedName);
+    const serialNumber =
+      nameId.version === 1 ? nameId.serialNumber : -nameId.serialNumber;
 
     const setParams = new ContractFunctionParameters()
-      .addInt64(nameSerial as unknown as BigNumber)
+      .addInt64(serialNumber as unknown as BigNumber)
       .addBytes32(toBytes32(utf8Encode(parsedName.recordName)))
       .addString(text);
 
     const transaction = new ContractExecuteTransaction()
-      .setContractId(tldContractId)
+      .setContractId(nameId.contractId)
       .setFunction("setText", setParams)
       .setGas(300_000);
 
@@ -435,17 +466,16 @@ export class KNS implements IKNS {
    */
   async removeText(name: string): Promise<void> {
     const parsedName = parseRecordName(name);
-    const nameSerial = await this._getNameSerial(parsedName);
-    const tldContractId = await this._getTldContractId(
-      parsedName.topLevelDomain
-    );
+    const nameId = await this._getNameId(parsedName);
+    const serialNumber =
+      nameId.version === 1 ? nameId.serialNumber : -nameId.serialNumber;
 
     const delParams = new ContractFunctionParameters()
-      .addInt64(nameSerial as unknown as BigNumber)
+      .addInt64(serialNumber as unknown as BigNumber)
       .addBytes32(toBytes32(utf8Encode(parsedName.recordName)));
 
     const transaction = new ContractExecuteTransaction()
-      .setContractId(tldContractId)
+      .setContractId(nameId.contractId)
       .setFunction("deleteText", delParams)
       .setGas(200_000);
 
@@ -457,18 +487,17 @@ export class KNS implements IKNS {
    */
   async removeAddress(name: string, coinType: number): Promise<void> {
     const parsedName = parseRecordName(name);
-    const nameSerial = await this._getNameSerial(parsedName);
-    const tldContractId = await this._getTldContractId(
-      parsedName.topLevelDomain
-    );
+    const nameId = await this._getNameId(parsedName);
+    const serialNumber =
+      nameId.version === 1 ? nameId.serialNumber : -nameId.serialNumber;
 
     const delParams = new ContractFunctionParameters()
-      .addInt64(nameSerial as unknown as BigNumber)
+      .addInt64(serialNumber as unknown as BigNumber)
       .addBytes32(toBytes32(utf8Encode(parsedName.recordName)))
       .addUint32(coinType);
 
     const transaction = new ContractExecuteTransaction()
-      .setContractId(tldContractId)
+      .setContractId(nameId.contractId)
       .setFunction("deleteAddress", delParams)
       .setGas(200_000);
 
@@ -507,41 +536,49 @@ export class KNS implements IKNS {
     }
   }
 
-  private async _getTldContractId(tld: string): Promise<ContractId> {
-    let contractId = this._tldContractIds.get(tld);
+  private async _getV2TldId(
+    tld: string
+  ): Promise<{ contractId: ContractId; tokenId: TokenId }> {
+    let id = this._v2TldIds.get(tld);
 
-    if (contractId != null) {
-      return contractId;
+    if (id != null) {
+      return id;
     }
 
     const { data } = await this._resolver.get<{
       data: {
-        contractId: string;
+        v2ContractId: string;
+        v2TokenId: string;
       };
     }>(`/name/.${tld}`);
 
-    contractId = ContractId.fromString(data.data.contractId);
+    const contractId = ContractId.fromString(data.data.v2ContractId);
+    const tokenId = TokenId.fromString(data.data.v2TokenId);
 
-    this._tldContractIds.set(tld, contractId);
+    id = { contractId, tokenId };
 
-    return contractId;
+    this._v2TldIds.set(tld, id);
+
+    return id;
   }
 
-  private async _getNameSerial(parsedName: ParsedRecordName): Promise<number> {
+  private async _getNameId(parsedName: ParsedRecordName): Promise<NameId> {
     const name = `${parsedName.secondLevelDomain}.${parsedName.topLevelDomain}`;
-    let nameSerial = this._domainSerials.get(name);
+    let nameId = this._nameIds.get(name);
 
-    if (nameSerial != null) {
-      return nameSerial;
+    if (nameId != null) {
+      return nameId;
     }
 
-    const { serialNumber } = await this.getName(
+    const { serialNumber, tokenId, contractId, version } = await this.getName(
       `${parsedName.secondLevelDomain}.${parsedName.topLevelDomain}`
     );
 
-    this._domainSerials.set(name, serialNumber);
+    nameId = { serialNumber, tokenId, contractId, version };
 
-    return serialNumber;
+    this._nameIds.set(name, nameId);
+
+    return nameId;
   }
 
   private async _executeTransaction(

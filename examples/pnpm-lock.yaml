@@ -1,7 +1,10 @@
-lockfileVersion: 5.4
+lockfileVersion: '6.0'
 
-specifiers:
-  '@kabuto-sh/ns': link:..
+settings:
+  autoInstallPeers: true
+  excludeLinksFromLockfile: false
 
 dependencies:
-  '@kabuto-sh/ns': link:..
+  '@kabuto-sh/ns':
+    specifier: link:..
+    version: link:..

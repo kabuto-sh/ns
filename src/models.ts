@@ -1,4 +1,4 @@
-import type { AccountId } from "@hashgraph/sdk";
+import type { AccountId, ContractId, TokenId } from "@hashgraph/sdk";
 
 export interface AddressRecord {
   name: string;
@@ -18,4 +18,7 @@ export interface Name {
   serialNumber: number;
   ownerAccountId: AccountId;
   expirationTime: Date;
+  tokenId: TokenId;
+  contractId: ContractId;
+  version: 1 | 2;
 }
