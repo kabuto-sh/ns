@@ -185,7 +185,7 @@ export class KNS implements IKNS {
     return new Hbar(priceHbar);
   }
 
-  async _getTokenIdForName(parsedName: ParsedName): Promise<TokenId> {
+  private async _getTokenIdForName(parsedName: ParsedName): Promise<TokenId> {
     try {
       const nameId = await this._getNameId(parsedName);
       return nameId.tokenId;
