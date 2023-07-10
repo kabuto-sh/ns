@@ -256,6 +256,7 @@ export class KNS implements IKNS {
         version = 2;
         tokenId = kabutoResp.data.data.v2TokenId;
         contractId = kabutoResp.data.data.v2ContractId;
+        serialNumber = -serialNumber;
       } else {
         version = 1;
         tokenId = kabutoResp.data.data.v1TokenId;
