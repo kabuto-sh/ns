@@ -89,6 +89,11 @@ export interface IKNS {
   findNamesByHederaAddress(address: AccountId): Promise<string[]>;
 
   /**
+   * Gets expiry date of all names associated with account id
+   */
+  getNameExpirations(): Promise<Array<{ name: string; expiresAt: Date }>>
+
+  /**
    * Gets the registration information for a name, if registered.
    */
   getName(name: string): Promise<Name>;

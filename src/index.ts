@@ -577,6 +577,14 @@ export class KNS implements IKNS {
     return data.data.map((rec) => `${rec.domain}.${rec.parent}`);
   }
 
+  async getNameExpirations(): Promise<Array<{ name: string; expiresAt: Date }>> {
+    const { data } = await this._resolver.get<{
+      data: { names: Array<{ name: string; expiresAt: Date }>; }
+    }>(`/account/${this._signer?.getAccountId()}`)
+
+    return data.data.names;
+  }
+
   /**
    * Searches for names with the given address record.
    */
