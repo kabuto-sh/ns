@@ -89,9 +89,9 @@ export interface IKNS {
   findNamesByHederaAddress(address: AccountId): Promise<string[]>;
 
   /**
-   * Gets expiry date of all names associated with account id
+   * Searches for names with the given owner account. Returns the domain and expiration.
    */
-  getNameExpirations(): Promise<Array<{ name: string; expiresAt: Date }>>
+  findNamesByOwner(): Promise<Array<Pick<Name, "domain" | "expirationTime">>>
 
   /**
    * Gets the registration information for a name, if registered.
