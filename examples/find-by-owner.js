@@ -7,9 +7,9 @@ const kns = new KNS({
   network: "testnet",
 });
 
-// ask for the HBAR address for a domain name
-const expirations = await kns.findNamesByOwner("0.0.13808914");
-console.log(">", expirations);
+// ask to find any names by the given owner on the Hedera network
+const names = await kns.findNamesByOwner("0.0.445388");
+console.log(">", names);
 
 // close the client and immediately quit
 kns.close();
