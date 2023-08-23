@@ -1,4 +1,4 @@
-import type {Signer} from "@hashgraph/sdk";
+import type { Signer } from "@hashgraph/sdk";
 import {
   AccountId,
   Client,
@@ -14,17 +14,28 @@ import {
   TransactionReceiptQuery,
   TransactionResponse,
 } from "@hashgraph/sdk";
-import axios, {type Axios} from "axios";
+import axios, { type Axios } from "axios";
 import BigNumber from "bignumber.js";
-import {getRegisterPriceUsd} from "./get-register-price.js";
-import {normalizeName, normalizeRecordName, ParsedName, parseName, parseRecordName,} from "./parse-name.js";
-import {addYears} from "date-fns";
-import {deserializeHederaAddress, formatAddress, serializeAddress, serializeHederaAddress,} from "./serde-address.js";
-import {base64Decode} from "./base64.js";
-import {utf8Encode} from "./utf8.js";
-import {toBytes32} from "./bytes.js";
-import type {IKNS} from "./interface.js";
-import type {AddressRecord, Name, TextRecord} from "./models.js";
+import { getRegisterPriceUsd } from "./get-register-price.js";
+import {
+  normalizeName,
+  normalizeRecordName,
+  ParsedName,
+  parseName,
+  parseRecordName,
+} from "./parse-name.js";
+import { addYears } from "date-fns";
+import {
+  deserializeHederaAddress,
+  formatAddress,
+  serializeAddress,
+  serializeHederaAddress,
+} from "./serde-address.js";
+import { base64Decode } from "./base64.js";
+import { utf8Encode } from "./utf8.js";
+import { toBytes32 } from "./bytes.js";
+import type { IKNS } from "./interface.js";
+import type { AddressRecord, Name, TextRecord } from "./models.js";
 
 interface RawAddressRecord {
   address: string;
@@ -315,7 +326,9 @@ export class KNS implements IKNS {
     }>(`/api/v1/tokens/${tokenId}/nfts/${serialNumber}`);
 
     return {
-      domain: `${parseName(name).secondLevelDomain}.${parseName(name).topLevelDomain}`,
+      domain: `${parseName(name).secondLevelDomain}.${
+        parseName(name).topLevelDomain
+      }`,
       ownerAccountId: AccountId.fromString(hederaResp.data.account_id),
       serialNumber,
       expirationTime,
@@ -570,12 +583,21 @@ export class KNS implements IKNS {
   /**
    * Searches for names with the given owner account. Returns the domain and expiration.
    */
-  async findNamesByOwner(ownerAccountId?: AccountId | string): Promise<Array<Pick<Name, "domain" | "expirationTime">>> {
+  async findNamesByOwner(
+    ownerAccountId?: AccountId | string
+  ): Promise<Array<Pick<Name, "domain" | "expirationTime">>> {
     const { data } = await this._resolver.get<{
-      data: { names: Array<{ name: string; expiresAt: string }>; }
-    }>(ownerAccountId ? `/owner/${ownerAccountId}` : `/owner/${this._signer?.getAccountId()}`)
+      data: { names: Array<{ name: string; expiresAt: string }> };
+    }>(
+      ownerAccountId
+        ? `/owner/${ownerAccountId}`
+        : `/owner/${this._signer?.getAccountId()}`
+    );
 
-    return data.data.names.map((name) => ({domain: name.name as string, expirationTime: new Date(name.expiresAt)}))
+    return data.data.names.map((name) => ({
+      domain: name.name as string,
+      expirationTime: new Date(name.expiresAt),
+    }));
   }
 
   /**

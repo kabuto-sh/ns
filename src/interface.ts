@@ -91,7 +91,7 @@ export interface IKNS {
   /**
    * Searches for names with the given owner account. Returns the domain and expiration.
    */
-  findNamesByOwner(): Promise<Array<Pick<Name, "domain" | "expirationTime">>>
+  findNamesByOwner(): Promise<Array<Pick<Name, "domain" | "expirationTime">>>;
 
   /**
    * Gets the registration information for a name, if registered.
