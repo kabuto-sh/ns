@@ -212,7 +212,7 @@ export class KNS implements IKNS {
           token_id: string;
         }>;
       };
-    }>(`/api/v1/owner/${this._signer!.getAccountId()}`);
+    }>(`/api/v1/accounts/${this._signer!.getAccountId()}`);
 
     return (
       hederaResp.data.balance.tokens.findIndex(
