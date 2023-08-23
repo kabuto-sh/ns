@@ -15,6 +15,7 @@ export interface TextRecord {
 }
 
 export interface Name {
+  domain: string;
   serialNumber: number;
   ownerAccountId: AccountId;
   expirationTime: Date;

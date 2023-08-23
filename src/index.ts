@@ -1,18 +1,18 @@
 import type { Signer } from "@hashgraph/sdk";
 import {
   AccountId,
-  Hbar,
-  TransactionReceipt,
   Client,
-  ContractId,
-  ContractFunctionParameters,
   ContractExecuteTransaction,
+  ContractFunctionParameters,
+  ContractId,
+  Hbar,
+  StatusError,
+  TokenAssociateTransaction,
+  TokenId,
   Transaction,
+  TransactionReceipt,
   TransactionReceiptQuery,
   TransactionResponse,
-  StatusError,
-  TokenId,
-  TokenAssociateTransaction,
 } from "@hashgraph/sdk";
 import axios, { type Axios } from "axios";
 import BigNumber from "bignumber.js";
@@ -21,7 +21,6 @@ import {
   normalizeName,
   normalizeRecordName,
   ParsedName,
-  ParsedRecordName,
   parseName,
   parseRecordName,
 } from "./parse-name.js";
@@ -273,6 +272,7 @@ export class KNS implements IKNS {
     this._nameIds.set(name, nameId);
 
     return {
+      domain: `${parsedName.secondLevelDomain}.${parsedName.topLevelDomain}`,
       ownerAccountId: this._signer!.getAccountId(),
       expirationTime: new Date(addYears(Date.now(), duration.years)),
       ...nameId,
@@ -326,6 +326,9 @@ export class KNS implements IKNS {
     }>(`/api/v1/tokens/${tokenId}/nfts/${serialNumber}`);
 
     return {
+      domain: `${parseName(name).secondLevelDomain}.${
+        parseName(name).topLevelDomain
+      }`,
       ownerAccountId: AccountId.fromString(hederaResp.data.account_id),
       serialNumber,
       expirationTime,
@@ -575,6 +578,26 @@ export class KNS implements IKNS {
     }>(`/record/address/${coinType}/${fmtAddress}/name`);
 
     return data.data.map((rec) => `${rec.domain}.${rec.parent}`);
+  }
+
+  /**
+   * Searches for names with the given owner account. Returns the domain and expiration.
+   */
+  async findNamesByOwner(
+    ownerAccountId?: AccountId | string
+  ): Promise<Array<Pick<Name, "domain" | "expirationTime">>> {
+    const { data } = await this._resolver.get<{
+      data: { names: Array<{ name: string; expiresAt: string }> };
+    }>(
+      ownerAccountId
+        ? `/owner/${ownerAccountId}`
+        : `/owner/${this._signer?.getAccountId()}`
+    );
+
+    return data.data.names.map((name) => ({
+      domain: name.name as string,
+      expirationTime: new Date(name.expiresAt),
+    }));
   }
 
   /**
