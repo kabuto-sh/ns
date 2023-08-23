@@ -9,9 +9,11 @@
   "types": "lib/index.d.ts",
   "scripts": {
     "fmt": "prettier --write .",
+    "fmt:check": "prettier --list-different .",
     "build": "tsc && node scripts/bundle.js",
     "prepare": "run-s build",
-    "test": "vitest run --coverage"
+    "test": "vitest run --coverage",
+    "typecheck": "tsc --noEmit"
   },
   "keywords": [],
   "author": "LaunchBadge <contact@launchbadge.com>",
