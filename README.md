@@ -1,5 +1,8 @@
 # Kabuto Name Service (KNS) SDK
 
+![npm](https://img.shields.io/npm/dt/%40kabuto-sh/ns)
+![npm](https://img.shields.io/npm/v/%40kabuto-sh/ns)
+
 > The only full decentralized Web3 name service on Hedera Hashgraph.
 
 ## Install
