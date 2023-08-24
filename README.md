@@ -11,9 +11,7 @@
 npm install @kabuto-sh/ns
 ```
 
-## Usage
-
-### Setup
+## Setup
 
 Before using `KNS`, you need to set the `Signer` that will be used
 to sign and execute transactions against the network.
@@ -29,6 +27,8 @@ const kns = new KNS({
 //  from HIP-338
 kns.setSigner(yourSigner);
 ```
+
+## Usage
 
 ### Register Name
 
