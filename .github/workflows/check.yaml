@@ -24,7 +24,7 @@ jobs:
           key: ${{ runner.os }}-modules-${{ hashFiles('**/yarn.lock') }}
 
       - name: Install dependencies
-        run: pnpm install --immutable
+        run: pnpm install
 
       - name: Typecheck
         run: pnpm run typecheck
