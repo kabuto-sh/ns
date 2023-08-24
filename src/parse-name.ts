@@ -44,7 +44,7 @@ export function parseRecordName(recordName: string): ParsedRecordName {
 
   if (nameParts.length === 1) {
     throw Error(
-      "invalid, expected a record name of the form `example.hh` or `test.example.hh`"
+      "invalid, expected a record name of the form `example.hh` or `test.example.hh`",
     );
   }
 

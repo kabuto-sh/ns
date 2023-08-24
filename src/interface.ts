@@ -49,7 +49,7 @@ export interface IKNS {
   setAddress(
     name: string,
     coinType: number,
-    address: Uint8Array | string
+    address: Uint8Array | string,
   ): Promise<AddressRecord>;
 
   /**
@@ -57,7 +57,7 @@ export interface IKNS {
    */
   setHederaAddress(
     name: string,
-    address: Uint8Array | string | AccountId
+    address: Uint8Array | string | AccountId,
   ): Promise<AddressRecord>;
 
   /**
@@ -80,7 +80,7 @@ export interface IKNS {
    */
   findNamesByAddress(
     coinType: number,
-    address: string | Uint8Array
+    address: string | Uint8Array,
   ): Promise<string[]>;
 
   /**
@@ -102,7 +102,7 @@ export interface IKNS {
    * Gets all address and all text records for a name.
    */
   getAll(
-    name: string
+    name: string,
   ): Promise<{ address: AddressRecord[]; text: TextRecord[] }>;
 
   /**

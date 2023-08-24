@@ -76,7 +76,7 @@ await kns.setAddress("example.hh", 3030, "0.0.2020");
 await kns.setAddress(
   "example.hh",
   60,
-  "0x71c7656ec7ab88b098defb751b7401b5f6d8976f"
+  "0x71c7656ec7ab88b098defb751b7401b5f6d8976f",
 );
 ```
 

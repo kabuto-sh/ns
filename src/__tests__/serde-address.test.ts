@@ -16,7 +16,7 @@ describe("serializeAddress", () => {
 
     expect(address.byteLength).toEqual(34);
     expect(hexEncode(address)).toEqual(
-      "314276424d53455973745765747154466e354175346d3447466737784a614e564e32"
+      "314276424d53455973745765747154466e354175346d3447466737784a614e564e32",
     );
 
     expect(deserializeBitcoinAddress(address)).toEqual(btc);
@@ -28,7 +28,7 @@ describe("serializeAddress", () => {
 
     expect(address.byteLength).toEqual(42);
     expect(hexEncode(address)).toEqual(
-      "62633171617230737272723778666b7679356c3634336c79646e77397265353967747a7a7766356d6471"
+      "62633171617230737272723778666b7679356c3634336c79646e77397265353967747a7a7766356d6471",
     );
 
     expect(deserializeBitcoinAddress(address)).toEqual(btc);
@@ -40,7 +40,7 @@ describe("serializeAddress", () => {
 
     expect(address.byteLength).toEqual(20);
     expect(hexEncode(address)).toEqual(
-      "71c7656ec7ab88b098defb751b7401b5f6d8976f"
+      "71c7656ec7ab88b098defb751b7401b5f6d8976f",
     );
 
     expect(deserializeEthereumAddress(address)).toEqual(eth);
@@ -48,14 +48,14 @@ describe("serializeAddress", () => {
 
   it("can serialize a Hedera account alias", () => {
     let publicKey = PublicKey.fromString(
-      "302a300506032b6570032100743553ec3647797df01a8ec74c1143ae8d9e187f60fc13d7998822e3cebc4f5e"
+      "302a300506032b6570032100743553ec3647797df01a8ec74c1143ae8d9e187f60fc13d7998822e3cebc4f5e",
     );
     let accountId = publicKey.toAccountId(1, 2);
     let address = serializeHederaAddress(accountId);
 
     expect(address.byteLength).toEqual(40);
     expect(hexEncode(address)).toEqual(
-      "0801100222221220743553ec3647797df01a8ec74c1143ae8d9e187f60fc13d7998822e3cebc4f5e"
+      "0801100222221220743553ec3647797df01a8ec74c1143ae8d9e187f60fc13d7998822e3cebc4f5e",
     );
 
     let reverseAccountId = deserializeHederaAddress(address);
@@ -68,7 +68,7 @@ describe("serializeAddress", () => {
 
   it("can deserialize a Hedera account ID that was serialized via toBytes", () => {
     let reverseAccountId = deserializeHederaAddress(
-      hexDecode("08321014189008")
+      hexDecode("08321014189008"),
     );
 
     expect(reverseAccountId.num.toNumber()).toEqual(1040);
@@ -77,18 +77,18 @@ describe("serializeAddress", () => {
   });
 
   it("can serialize a Hedera account ID", () => {
-    let accountId = new AccountId(50, 20, 1040);
+    let accountId = new AccountId(0, 0, 1040);
     let address = serializeAddress(3030, accountId.toString());
 
     expect(address.byteLength).toEqual(20);
     expect(hexEncode(address)).toEqual(
-      "0000003200000000000000140000000000000410"
+      "0000000000000000000000000000000000000410",
     );
 
     let reverseAccountId = deserializeHederaAddress(address);
 
     expect(reverseAccountId.num.toNumber()).toEqual(1040);
-    expect(reverseAccountId.shard.toNumber()).toEqual(50);
-    expect(reverseAccountId.realm.toNumber()).toEqual(20);
+    expect(reverseAccountId.shard.toNumber()).toEqual(0);
+    expect(reverseAccountId.realm.toNumber()).toEqual(0);
   });
 });

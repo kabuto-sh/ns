@@ -23,7 +23,7 @@ export function formatAddress(coinType: number, address: Uint8Array): string {
 
 export function serializeAddress(
   coinType: number,
-  address: string | Uint8Array
+  address: string | Uint8Array,
 ): Uint8Array {
   let addressBytes: Uint8Array;
 
@@ -52,7 +52,7 @@ export function serializeAddress(
 
       default:
         throw new Error(
-          `no serialization for coinType ${coinType} available, please serialize before calling setAddress`
+          `no serialization for coinType ${coinType} available, please serialize before calling setAddress`,
         );
     }
   } else {
@@ -63,7 +63,7 @@ export function serializeAddress(
 }
 
 export function serializeHederaAddress(
-  address: Uint8Array | string | AccountId
+  address: Uint8Array | string | AccountId,
 ): Uint8Array {
   if (address instanceof AccountId) {
     return address.toBytes();

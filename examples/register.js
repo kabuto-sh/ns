@@ -15,7 +15,7 @@ const client = LocalProvider.fromClient(Client.forTestnet());
 const softwareWallet = new Wallet(
   process.env.ACCOUNT_ID,
   process.env.ACCOUNT_KEY,
-  client
+  client,
 );
 
 kns.setSigner(softwareWallet);

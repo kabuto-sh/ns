@@ -124,7 +124,7 @@ export class KNS implements IKNS {
       resolver?: string;
     } = {
       network: "testnet",
-    }
+    },
   ) {
     this._client = Client.forName(options.network);
 
@@ -216,7 +216,7 @@ export class KNS implements IKNS {
 
     return (
       hederaResp.data.balance.tokens.findIndex(
-        (token) => token.token_id === tokenId
+        (token) => token.token_id === tokenId,
       ) >= 0
     );
   }
@@ -342,7 +342,7 @@ export class KNS implements IKNS {
    * Gets all address and all text records for a name.
    */
   async getAll(
-    name: string
+    name: string,
   ): Promise<{ text: TextRecord[]; address: AddressRecord[] }> {
     try {
       const { data } = await this._resolver.get<{
@@ -436,7 +436,7 @@ export class KNS implements IKNS {
   async getMetadata(name: string): Promise<object> {
     try {
       const { data } = await this._resolver.get<object>(
-        `/name/${encodeURIComponent(normalizeName(name))}/metadata`
+        `/name/${encodeURIComponent(normalizeName(name))}/metadata`,
       );
 
       return data;
@@ -450,7 +450,7 @@ export class KNS implements IKNS {
    */
   setHederaAddress(
     name: string,
-    address: Uint8Array | string | AccountId
+    address: Uint8Array | string | AccountId,
   ): Promise<AddressRecord> {
     return this.setAddress(name, 3030, serializeHederaAddress(address));
   }
@@ -461,7 +461,7 @@ export class KNS implements IKNS {
   async setAddress(
     name: string,
     coinType: number,
-    address: Uint8Array | string
+    address: Uint8Array | string,
   ): Promise<AddressRecord> {
     const parsedName = parseRecordName(name);
     const nameId = await this._getNameId(parsedName);
@@ -566,11 +566,11 @@ export class KNS implements IKNS {
    */
   async findNamesByAddress(
     coinType: number,
-    address: string | Uint8Array
+    address: string | Uint8Array,
   ): Promise<string[]> {
     const fmtAddress = formatAddress(
       coinType,
-      serializeAddress(coinType, address)
+      serializeAddress(coinType, address),
     );
 
     const { data } = await this._resolver.get<{
@@ -584,14 +584,14 @@ export class KNS implements IKNS {
    * Searches for names with the given owner account. Returns the domain and expiration.
    */
   async findNamesByOwner(
-    ownerAccountId?: AccountId | string
+    ownerAccountId?: AccountId | string,
   ): Promise<Array<Pick<Name, "domain" | "expirationTime">>> {
     const { data } = await this._resolver.get<{
       data: { names: Array<{ name: string; expiresAt: string }> };
     }>(
       ownerAccountId
         ? `/owner/${ownerAccountId}`
-        : `/owner/${this._signer?.getAccountId()}`
+        : `/owner/${this._signer?.getAccountId()}`,
     );
 
     return data.data.names.map((name) => ({
@@ -614,7 +614,7 @@ export class KNS implements IKNS {
   }
 
   private async _getV2TldId(
-    tld: string
+    tld: string,
   ): Promise<{ contractId: ContractId; tokenId: TokenId }> {
     let id = this._v2TldIds.get(tld);
 
@@ -652,7 +652,7 @@ export class KNS implements IKNS {
     }
 
     const { serialNumber, tokenId, contractId, version } = await this.getName(
-      `${parsedName.secondLevelDomain}.${parsedName.topLevelDomain}`
+      `${parsedName.secondLevelDomain}.${parsedName.topLevelDomain}`,
     );
 
     nameId = { serialNumber, tokenId, contractId, version };
@@ -663,7 +663,7 @@ export class KNS implements IKNS {
   }
 
   private async _executeTransaction(
-    transaction: Transaction
+    transaction: Transaction,
   ): Promise<TransactionReceipt> {
     this._requireSigner();
 
