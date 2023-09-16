@@ -235,6 +235,16 @@ export class KNS implements IKNS {
     await this._executeTransaction(transaction);
   }
 
+  private async _getNamePriceForDuration(
+    name: string,
+    duration: { years: number },
+  ): Promise<BigNumber> {
+    const unitPrice = await this.getRegisterPriceHbar(name);
+    const price = unitPrice.toBigNumber().multipliedBy(duration.years);
+
+    return price;
+  }
+
   /**
    * Registers a new name to the current signer for the desired duration.
    * To check how much HBAR this will cost, call `getRegisterPrice(name)`.
@@ -242,9 +252,7 @@ export class KNS implements IKNS {
   async registerName(name: string, duration: { years: number }): Promise<Name> {
     const parsedName = parseName(name);
     const tldId = await this._getV2TldId(parsedName.topLevelDomain);
-
-    const unitPrice = await this.getRegisterPriceHbar(name);
-    const price = unitPrice.toBigNumber().multipliedBy(duration.years);
+    const price = await this._getNamePriceForDuration(name, duration);
 
     const registerParams = new ContractFunctionParameters()
       .addBytes32(toBytes32(utf8Encode(parsedName.secondLevelDomain)))
@@ -277,6 +285,40 @@ export class KNS implements IKNS {
       expirationTime: new Date(addYears(Date.now(), duration.years)),
       ...nameId,
     };
+  }
+
+  /**
+   * Extends the ownership for the name for the desired duration.
+   * Must be the owner of the NFT for this name.
+   */
+  async extendNameRegistration(
+    name: string,
+    duration: { years: number },
+  ): Promise<Name> {
+    const parsedName = parseName(name);
+
+    // throws if the name does not exist
+    const nameData = await this.getName(name);
+
+    // calculate price to extend this name
+    const price = await this._getNamePriceForDuration(name, duration);
+
+    const extendParams = new ContractFunctionParameters()
+      .addBytes32(toBytes32(utf8Encode(parsedName.secondLevelDomain)))
+      .addUint256(duration.years);
+
+    const transaction = new ContractExecuteTransaction()
+      .setContractId(nameData.contractId)
+      .setFunction("extendZoneLifetime", extendParams)
+      .setPayableAmount(price)
+      .setGas(2860000);
+
+    await this._executeTransaction(transaction);
+
+    // adjust the expiration time on the name
+    nameData.expirationTime = addYears(nameData.expirationTime, duration.years);
+
+    return nameData;
   }
 
   /**
