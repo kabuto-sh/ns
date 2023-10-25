@@ -21,5 +21,5 @@ export interface Name {
   expirationTime: Date;
   tokenId: TokenId;
   contractId: ContractId;
-  version: 1 | 2;
+  version: 1 | 2 | 3;
 }

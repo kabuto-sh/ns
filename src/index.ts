@@ -47,7 +47,7 @@ interface NameId {
   tokenId: TokenId;
   contractId: ContractId;
   serialNumber: number;
-  version: 1 | 2;
+  version: 1 | 2 | 3;
 }
 
 function handleResolverAxiosError(error: unknown): never {
@@ -105,8 +105,8 @@ export class KNS implements IKNS {
 
   private readonly _hederaMirror: Axios;
 
-  // cache of TLDs (ex. "hh") to v2 contract and token IDs (for purchasing)
-  private readonly _v2TldIds: Map<
+  // cache of TLDs (ex. "hh") to v3 contract and token IDs (for purchasing)
+  private readonly _v3TldIds: Map<
     string,
     { tokenId: TokenId; contractId: ContractId }
   > = new Map();
@@ -190,7 +190,7 @@ export class KNS implements IKNS {
       return nameId.tokenId;
     } catch (error) {
       if (error instanceof NameNotFoundError) {
-        const tldId = await this._getV2TldId(parsedName.topLevelDomain);
+        const tldId = await this._getV3TldId(parsedName.topLevelDomain);
         return tldId.tokenId;
       } else {
         throw error;
@@ -251,7 +251,7 @@ export class KNS implements IKNS {
    */
   async registerName(name: string, duration: { years: number }): Promise<Name> {
     const parsedName = parseName(name);
-    const tldId = await this._getV2TldId(parsedName.topLevelDomain);
+    const tldId = await this._getV3TldId(parsedName.topLevelDomain);
     const price = await this._getNamePriceForDuration(name, duration);
 
     const registerParams = new ContractFunctionParameters()
@@ -273,7 +273,7 @@ export class KNS implements IKNS {
 
     const nameId: NameId = {
       serialNumber,
-      version: 2,
+      version: 3,
       ...tldId,
     };
 
@@ -329,24 +329,30 @@ export class KNS implements IKNS {
     let contractId: string;
     let serialNumber: number;
     let expirationTime: Date;
-    let version: 1 | 2;
+    let version: 1 | 2 | 3;
 
     try {
       const kabutoResp = await this._resolver.get<{
         data: {
           v1ContractId: string;
           v2ContractId: string;
+          v3ContractId: string;
           expiresAt: string;
           maxRecords: number;
           v1TokenId: string;
           v2TokenId: string;
+          v3TokenId: string;
           tokenSerialNumber: number;
         };
       }>(`/name/${encodeURIComponent(normalizeName(name))}`);
 
       serialNumber = kabutoResp.data.data.tokenSerialNumber;
 
-      if (serialNumber < 0) {
+      if (serialNumber > 32000) {
+        version = 3;
+        tokenId = kabutoResp.data.data.v3TokenId;
+        contractId = kabutoResp.data.data.v3ContractId;
+      } else if (serialNumber < 0) {
         // negative serial numbers use v2 IDs
         version = 2;
         tokenId = kabutoResp.data.data.v2TokenId;
@@ -655,10 +661,10 @@ export class KNS implements IKNS {
     }
   }
 
-  private async _getV2TldId(
+  private async _getV3TldId(
     tld: string,
   ): Promise<{ contractId: ContractId; tokenId: TokenId }> {
-    let id = this._v2TldIds.get(tld);
+    let id = this._v3TldIds.get(tld);
 
     if (id != null) {
       return id;
@@ -667,17 +673,17 @@ export class KNS implements IKNS {
     try {
       const { data } = await this._resolver.get<{
         data: {
-          v2ContractId: string;
-          v2TokenId: string;
+          v3ContractId: string;
+          v3TokenId: string;
         };
       }>(`/name/.${tld}`);
 
-      const contractId = ContractId.fromString(data.data.v2ContractId);
-      const tokenId = TokenId.fromString(data.data.v2TokenId);
+      const contractId = ContractId.fromString(data.data.v3ContractId);
+      const tokenId = TokenId.fromString(data.data.v3TokenId);
 
       id = { contractId, tokenId };
 
-      this._v2TldIds.set(tld, id);
+      this._v3TldIds.set(tld, id);
 
       return id;
     } catch (error) {
