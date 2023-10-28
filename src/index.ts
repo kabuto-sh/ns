@@ -352,6 +352,7 @@ export class KNS implements IKNS {
         version = 3;
         tokenId = kabutoResp.data.data.v3TokenId;
         contractId = kabutoResp.data.data.v3ContractId;
+        serialNumber = serialNumber - 32000;
       } else if (serialNumber < 0) {
         // negative serial numbers use v2 IDs
         version = 2;
