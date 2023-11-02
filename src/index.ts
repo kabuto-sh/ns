@@ -47,6 +47,7 @@ interface NameId {
   tokenId: TokenId;
   contractId: ContractId;
   serialNumber: number;
+  contractSerialNumber: number;
   version: 1 | 2 | 3;
 }
 
@@ -273,6 +274,7 @@ export class KNS implements IKNS {
 
     const nameId: NameId = {
       serialNumber,
+      contractSerialNumber: this._toContractSerialNumber(3, serialNumber),
       version: 3,
       ...tldId,
     };
@@ -328,6 +330,7 @@ export class KNS implements IKNS {
     let tokenId: string;
     let contractId: string;
     let serialNumber: number;
+    let contractSerialNumber: number;
     let expirationTime: Date;
     let version: 1 | 2 | 3;
 
@@ -347,6 +350,7 @@ export class KNS implements IKNS {
       }>(`/name/${encodeURIComponent(normalizeName(name))}`);
 
       serialNumber = kabutoResp.data.data.tokenSerialNumber;
+      contractSerialNumber = serialNumber;
 
       if (serialNumber > 32000) {
         version = 3;
@@ -380,6 +384,7 @@ export class KNS implements IKNS {
       }`,
       ownerAccountId: AccountId.fromString(hederaResp.data.account_id),
       serialNumber,
+      contractSerialNumber,
       expirationTime,
       contractId: ContractId.fromString(contractId),
       tokenId: TokenId.fromString(tokenId),
@@ -514,13 +519,11 @@ export class KNS implements IKNS {
   ): Promise<AddressRecord> {
     const parsedName = parseRecordName(name);
     const nameId = await this._getNameId(parsedName);
-    const serialNumber =
-      nameId.version === 1 ? nameId.serialNumber : -nameId.serialNumber;
 
     const serAddress = serializeAddress(coinType, address);
 
     const setParams = new ContractFunctionParameters()
-      .addInt64(serialNumber as unknown as BigNumber)
+      .addInt64(nameId.contractSerialNumber as unknown as BigNumber)
       .addBytes32(toBytes32(utf8Encode(parsedName.recordName)))
       .addUint32(coinType)
       .addBytes(serAddress);
@@ -546,11 +549,9 @@ export class KNS implements IKNS {
   async setText(name: string, text: string): Promise<TextRecord> {
     const parsedName = parseRecordName(name);
     const nameId = await this._getNameId(parsedName);
-    const serialNumber =
-      nameId.version === 1 ? nameId.serialNumber : -nameId.serialNumber;
 
     const setParams = new ContractFunctionParameters()
-      .addInt64(serialNumber as unknown as BigNumber)
+      .addInt64(nameId.contractSerialNumber as unknown as BigNumber)
       .addBytes32(toBytes32(utf8Encode(parsedName.recordName)))
       .addString(text);
 
@@ -573,11 +574,9 @@ export class KNS implements IKNS {
   async removeText(name: string): Promise<void> {
     const parsedName = parseRecordName(name);
     const nameId = await this._getNameId(parsedName);
-    const serialNumber =
-      nameId.version === 1 ? nameId.serialNumber : -nameId.serialNumber;
 
     const delParams = new ContractFunctionParameters()
-      .addInt64(serialNumber as unknown as BigNumber)
+      .addInt64(nameId.contractSerialNumber as unknown as BigNumber)
       .addBytes32(toBytes32(utf8Encode(parsedName.recordName)));
 
     const transaction = new ContractExecuteTransaction()
@@ -594,11 +593,9 @@ export class KNS implements IKNS {
   async removeAddress(name: string, coinType: number): Promise<void> {
     const parsedName = parseRecordName(name);
     const nameId = await this._getNameId(parsedName);
-    const serialNumber =
-      nameId.version === 1 ? nameId.serialNumber : -nameId.serialNumber;
 
     const delParams = new ContractFunctionParameters()
-      .addInt64(serialNumber as unknown as BigNumber)
+      .addInt64(nameId.contractSerialNumber as unknown as BigNumber)
       .addBytes32(toBytes32(utf8Encode(parsedName.recordName)))
       .addUint32(coinType);
 
@@ -692,6 +689,21 @@ export class KNS implements IKNS {
     }
   }
 
+  private _toContractSerialNumber(
+    version: number,
+    serialNumber: number,
+  ): number {
+    if (version === 3) {
+      return 32000 + serialNumber;
+    }
+
+    if (version === 2) {
+      return -serialNumber;
+    }
+
+    return serialNumber;
+  }
+
   private async _getNameId(parsedName: ParsedName): Promise<NameId> {
     const name = `${parsedName.secondLevelDomain}.${parsedName.topLevelDomain}`;
     let nameId = this._nameIds.get(name);
@@ -700,11 +712,18 @@ export class KNS implements IKNS {
       return nameId;
     }
 
-    const { serialNumber, tokenId, contractId, version } = await this.getName(
-      `${parsedName.secondLevelDomain}.${parsedName.topLevelDomain}`,
-    );
+    const { serialNumber, tokenId, contractId, version, contractSerialNumber } =
+      await this.getName(
+        `${parsedName.secondLevelDomain}.${parsedName.topLevelDomain}`,
+      );
 
-    nameId = { serialNumber, tokenId, contractId, version };
+    nameId = {
+      serialNumber,
+      tokenId,
+      contractId,
+      version,
+      contractSerialNumber,
+    };
 
     this._nameIds.set(name, nameId);
 

@@ -16,10 +16,13 @@ export interface TextRecord {
 
 export interface Name {
   domain: string;
+  // serial number of the token, relative to the contract version
   serialNumber: number;
   ownerAccountId: AccountId;
   expirationTime: Date;
   tokenId: TokenId;
   contractId: ContractId;
+  // absolute serial number of token for use in the contract
+  contractSerialNumber: number;
   version: 1 | 2 | 3;
 }
