@@ -4,11 +4,11 @@ import { KNS } from "@kabuto-sh/ns";
 // instantiate a new KNS client
 const kns = new KNS({
   // select `testnet` or `mainnet`
-  network: "mainnet",
+  network: "testnet",
 });
 
 // ask for the HBAR address for a domain name
-const address = await kns.getHederaAddress("mehcode.hh");
+const address = await kns.getHederaAddress("exampletwo.hh");
 console.log(">", address.toString());
 
 // close the client and immediately quit

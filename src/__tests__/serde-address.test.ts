@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { AccountId, PublicKey } from "@hashgraph/sdk";
+import { AccountId, PublicKey } from "@hiero-ledger/sdk";
 import {
   deserializeBitcoinAddress,
   deserializeEthereumAddress,

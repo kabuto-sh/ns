@@ -1,5 +1,5 @@
 // import the Kabuto Name Service (KNS) SDK
-import { Client, LocalProvider, Wallet } from "@hashgraph/sdk";
+import { Client, LocalProvider, Wallet } from "@hiero-ledger/sdk";
 import { KNS } from "@kabuto-sh/ns";
 
 // instantiate a new KNS client

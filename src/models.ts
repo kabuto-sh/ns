@@ -1,4 +1,4 @@
-import type { AccountId, ContractId, TokenId } from "@hashgraph/sdk";
+import type { AccountId, ContractId, TokenId } from "@hiero-ledger/sdk";
 
 export interface AddressRecord {
   name: string;

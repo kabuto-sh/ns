@@ -1,4 +1,4 @@
-import { AccountId } from "@hashgraph/sdk";
+import { AccountId } from "@hiero-ledger/sdk";
 import { hexDecode, hexEncode } from "./hex.js";
 import { utf8Decode, utf8Encode } from "./utf8.js";
 

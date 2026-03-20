@@ -1,4 +1,4 @@
-import type { AccountId, Hbar, Signer } from "@hashgraph/sdk";
+import type { AccountId, Hbar, Signer } from "@hiero-ledger/sdk";
 import type BigNumber from "bignumber.js";
 import type { AddressRecord, Name, TextRecord } from "./models.js";
 

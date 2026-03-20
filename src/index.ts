@@ -1,4 +1,4 @@
-import type { Signer } from "@hashgraph/sdk";
+import type { Signer } from "@hiero-ledger/sdk";
 import {
   AccountId,
   Client,
@@ -13,7 +13,7 @@ import {
   TransactionReceipt,
   TransactionReceiptQuery,
   TransactionResponse,
-} from "@hashgraph/sdk";
+} from "@hiero-ledger/sdk";
 import axios, { type Axios } from "axios";
 import BigNumber from "bignumber.js";
 import { getRegisterPriceUsd } from "./get-register-price.js";

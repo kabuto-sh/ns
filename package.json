@@ -20,8 +20,7 @@
   "author": "LaunchBadge <contact@launchbadge.com>",
   "license": "Apache-2.0",
   "devDependencies": {
-    "@hashgraph/sdk": "^2.36.0",
-    "@types/long": "^4.0.2",
+    "@hiero-ledger/sdk": "^2.81.0",
     "@vitest/coverage-v8": "^0.34.6",
     "esbuild": "^0.19.5",
     "esbuild-node-externals": "^1.9.0",
@@ -32,10 +31,10 @@
   },
   "dependencies": {
     "axios": "^1.5.1",
-    "bignumber.js": "^9.1.2",
+    "bignumber.js": "^9.1.1",
     "date-fns": "^2.30.0"
   },
   "peerDependencies": {
-    "@hashgraph/sdk": "^2.32.0"
+    "@hiero-ledger/sdk": "^2.81.0"
   }
 }

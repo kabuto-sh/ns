@@ -138,7 +138,7 @@ Retrieve a HBAR address record for a name, if available.
 Throws `NameNotFoundError` if not available.
 
 ```ts
-// address is an @hashgraph/sdk.AccountId
+// address is an @hiero-ledger/sdk.AccountId
 const address = await kns.getHederaAddress("example.hh");
 ```
 
