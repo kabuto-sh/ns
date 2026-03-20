@@ -735,6 +735,21 @@ export class KNS implements IKNS {
   ): Promise<TransactionReceipt> {
     this._requireSigner();
 
+    // freezeWithSigner calls freeze() with a null client, which requires node
+    // account IDs to already be set. Signers like WalletConnect don't populate
+    // these via populateTransaction(), so we derive them from getNetwork() first.
+
+    if (
+      transaction.nodeAccountIds == null ||
+      transaction.nodeAccountIds.length === 0
+    ) {
+      const nodeAccountIds = Object.keys(this._signer!.getNetwork()).map(
+        (id) => (typeof id === "string" ? AccountId.fromString(id) : id),
+      );
+
+      transaction.setNodeAccountIds(nodeAccountIds);
+    }
+
     await transaction.freezeWithSigner(this._signer!);
 
     const transactionId = transaction.transactionId;
