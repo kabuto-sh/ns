@@ -743,7 +743,7 @@ export class KNS implements IKNS {
       transaction.nodeAccountIds == null ||
       transaction.nodeAccountIds.length === 0
     ) {
-      const nodeAccountIds = Object.keys(this._signer!.getNetwork()).map(
+      const nodeAccountIds = Object.values(this._signer!.getNetwork()).map(
         (id) => (typeof id === "string" ? AccountId.fromString(id) : id),
       );
 
