@@ -17,7 +17,10 @@ describe("getRegisterPriceUsd", () => {
   });
 
   it("can price 0 characters", () => {
-    expect(getRegisterPriceUsd("")).toEqual(BigNumber("inf"));
+    const price = getRegisterPriceUsd("");
+
+    expect(price.isNaN()).toBe(false);
+    expect(price.isFinite()).toBe(false);
   });
 
   it("can price 3+ non-ascii characters", () => {
