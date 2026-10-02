@@ -53,3 +53,75 @@ describe("getRegisterPriceHbar", () => {
     expect(cached.toString()).toBe("50 ℏ");
   });
 });
+
+describe("without a signer", () => {
+  const SIGNER_REQUIRED =
+    "signer required, call setSigner before calling this method";
+
+  let kns: KNS;
+
+  beforeEach(() => {
+    kns = new KNS();
+  });
+
+  afterEach(() => {
+    kns.close();
+  });
+
+  function stubRequests() {
+    const unexpected = new Error("unexpected request");
+
+    return {
+      resolver: vi.spyOn(kns["_resolver"], "get").mockRejectedValue(unexpected),
+      mirror: vi
+        .spyOn(kns["_hederaMirror"], "get")
+        .mockRejectedValue(unexpected),
+    };
+  }
+
+  it("isAssociatedForName throws before any request", async () => {
+    const { resolver, mirror } = stubRequests();
+
+    await expect(kns.isAssociatedForName("foo.hh")).rejects.toThrow(
+      SIGNER_REQUIRED,
+    );
+    expect(resolver).not.toHaveBeenCalled();
+    expect(mirror).not.toHaveBeenCalled();
+  });
+
+  it("associateName throws before any request", async () => {
+    const { resolver, mirror } = stubRequests();
+
+    await expect(kns.associateName("foo.hh")).rejects.toThrow(SIGNER_REQUIRED);
+    expect(resolver).not.toHaveBeenCalled();
+    expect(mirror).not.toHaveBeenCalled();
+  });
+
+  it("findNamesByOwner with no owner throws before any request", async () => {
+    const { resolver, mirror } = stubRequests();
+
+    await expect(kns.findNamesByOwner()).rejects.toThrow(SIGNER_REQUIRED);
+    expect(resolver).not.toHaveBeenCalled();
+    expect(mirror).not.toHaveBeenCalled();
+  });
+
+  it("findNamesByOwner with an owner does not need one", async () => {
+    const get = vi.spyOn(kns["_resolver"], "get").mockResolvedValue({
+      data: {
+        data: {
+          names: [{ name: "foo.hh", expiresAt: "2027-01-01T00:00:00.000Z" }],
+        },
+      },
+    });
+
+    const names = await kns.findNamesByOwner("0.0.1234");
+
+    expect(get).toHaveBeenCalledWith("/owner/0.0.1234");
+    expect(names).toEqual([
+      {
+        domain: "foo.hh",
+        expirationTime: new Date("2027-01-01T00:00:00.000Z"),
+      },
+    ]);
+  });
+});

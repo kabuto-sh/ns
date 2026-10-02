@@ -204,6 +204,8 @@ export class KNS implements IKNS {
    * Each top-level-domain (TLD) needs to be associated.
    */
   async isAssociatedForName(name: string): Promise<boolean> {
+    this._requireSigner();
+
     const parsedName = parseName(name);
     const tokenId = (await this._getTokenIdForName(parsedName)).toString();
 
@@ -226,6 +228,8 @@ export class KNS implements IKNS {
    * Associates the signer to the top-level-domain (TLD) of the name.
    */
   async associateName(name: string): Promise<void> {
+    this._requireSigner();
+
     const parsedName = parseName(name);
     const tokenId = await this._getTokenIdForName(parsedName);
 
@@ -634,13 +638,14 @@ export class KNS implements IKNS {
   async findNamesByOwner(
     ownerAccountId?: AccountId | string,
   ): Promise<Array<Pick<Name, "domain" | "expirationTime">>> {
+    if (!ownerAccountId) {
+      this._requireSigner();
+      ownerAccountId = this._signer!.getAccountId();
+    }
+
     const { data } = await this._resolver.get<{
       data: { names: Array<{ name: string; expiresAt: string }> };
-    }>(
-      ownerAccountId
-        ? `/owner/${ownerAccountId}`
-        : `/owner/${this._signer?.getAccountId()}`,
-    );
+    }>(`/owner/${ownerAccountId}`);
 
     return data.data.names.map((name) => ({
       domain: name.name as string,
