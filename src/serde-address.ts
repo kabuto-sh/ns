@@ -35,7 +35,7 @@ export function serializeAddress(
         if (accountId.num.isZero()) {
           addressBytes = accountId.toBytes();
         } else {
-          addressBytes = hexDecode(accountId.toSolidityAddress());
+          addressBytes = hexDecode(accountId.toEvmAddress());
         }
 
         break;
@@ -77,7 +77,7 @@ export function deserializeHederaAddress(address: Uint8Array): AccountId {
     return AccountId.fromBytes(address);
   }
 
-  return AccountId.fromSolidityAddress(hexEncode(address));
+  return AccountId.fromEvmAddress(0, 0, hexEncode(address));
 }
 
 export function deserializeEthereumAddress(address: Uint8Array): string {
