@@ -60,7 +60,7 @@ describe("serializeAddress", () => {
 
     let reverseAccountId = deserializeHederaAddress(address);
 
-    expect(reverseAccountId.aliasKey).toEqual(publicKey);
+    expect(reverseAccountId.aliasKey?.equals(publicKey)).toBe(true);
     expect(reverseAccountId.num.toNumber()).toEqual(0);
     expect(reverseAccountId.shard.toNumber()).toEqual(1);
     expect(reverseAccountId.realm.toNumber()).toEqual(2);
