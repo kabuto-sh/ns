@@ -793,7 +793,7 @@ export class KNS implements IKNS {
 
     if (
       this._hbarPrice != null &&
-      this._hbarPriceTimestamp <= Date.now() - MINUTES_10
+      this._hbarPriceTimestamp > Date.now() - MINUTES_10
     ) {
       // hbar price is non-null, and it's been less than 10 minutes
       // since we fetched
