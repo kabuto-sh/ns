@@ -182,7 +182,7 @@ export class KNS implements IKNS {
       .div(hbarToUsd)
       .decimalPlaces(4, BigNumber.ROUND_UP);
 
-    return new Hbar(priceHbar);
+    return new Hbar(priceHbar.toFixed());
   }
 
   private async _getTokenIdForName(parsedName: ParsedName): Promise<TokenId> {
@@ -241,7 +241,9 @@ export class KNS implements IKNS {
     duration: { years: number },
   ): Promise<BigNumber> {
     const unitPrice = await this.getRegisterPriceHbar(name);
-    const price = unitPrice.toBigNumber().multipliedBy(duration.years);
+    const price = new BigNumber(unitPrice.toBigNumber()).multipliedBy(
+      duration.years,
+    );
 
     return price;
   }
@@ -523,7 +525,7 @@ export class KNS implements IKNS {
     const serAddress = serializeAddress(coinType, address);
 
     const setParams = new ContractFunctionParameters()
-      .addInt64(nameId.contractSerialNumber as unknown as BigNumber)
+      .addInt64(nameId.contractSerialNumber)
       .addBytes32(toBytes32(utf8Encode(parsedName.recordName)))
       .addUint32(coinType)
       .addBytes(serAddress);
@@ -551,7 +553,7 @@ export class KNS implements IKNS {
     const nameId = await this._getNameId(parsedName);
 
     const setParams = new ContractFunctionParameters()
-      .addInt64(nameId.contractSerialNumber as unknown as BigNumber)
+      .addInt64(nameId.contractSerialNumber)
       .addBytes32(toBytes32(utf8Encode(parsedName.recordName)))
       .addString(text);
 
@@ -576,7 +578,7 @@ export class KNS implements IKNS {
     const nameId = await this._getNameId(parsedName);
 
     const delParams = new ContractFunctionParameters()
-      .addInt64(nameId.contractSerialNumber as unknown as BigNumber)
+      .addInt64(nameId.contractSerialNumber)
       .addBytes32(toBytes32(utf8Encode(parsedName.recordName)));
 
     const transaction = new ContractExecuteTransaction()
@@ -595,7 +597,7 @@ export class KNS implements IKNS {
     const nameId = await this._getNameId(parsedName);
 
     const delParams = new ContractFunctionParameters()
-      .addInt64(nameId.contractSerialNumber as unknown as BigNumber)
+      .addInt64(nameId.contractSerialNumber)
       .addBytes32(toBytes32(utf8Encode(parsedName.recordName)))
       .addUint32(coinType);
 
