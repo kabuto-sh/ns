@@ -18,6 +18,7 @@ import axios, { type Axios } from "axios";
 import BigNumber from "bignumber.js";
 import { getRegisterPriceUsd } from "./get-register-price.js";
 import {
+  formatName,
   normalizeName,
   normalizeRecordName,
   ParsedName,
@@ -286,7 +287,7 @@ export class KNS implements IKNS {
       ...tldId,
     };
 
-    this._nameIds.set(name, nameId);
+    this._nameIds.set(formatName(parsedName), nameId);
 
     return {
       domain: `${parsedName.secondLevelDomain}.${parsedName.topLevelDomain}`,
@@ -716,7 +717,7 @@ export class KNS implements IKNS {
   }
 
   private async _getNameId(parsedName: ParsedName): Promise<NameId> {
-    const name = `${parsedName.secondLevelDomain}.${parsedName.topLevelDomain}`;
+    const name = formatName(parsedName);
     let nameId = this._nameIds.get(name);
 
     if (nameId != null) {
@@ -724,9 +725,7 @@ export class KNS implements IKNS {
     }
 
     const { serialNumber, tokenId, contractId, version, contractSerialNumber } =
-      await this.getName(
-        `${parsedName.secondLevelDomain}.${parsedName.topLevelDomain}`,
-      );
+      await this.getName(name);
 
     nameId = {
       serialNumber,

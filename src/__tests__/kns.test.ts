@@ -1,6 +1,14 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { Signer, Transaction } from "@hiero-ledger/sdk";
-import { AccountId, TransactionId } from "@hiero-ledger/sdk";
+import type {
+  Signer,
+  Transaction,
+  TransactionReceipt,
+} from "@hiero-ledger/sdk";
+import {
+  AccountId,
+  TransactionId,
+  TransactionReceiptQuery,
+} from "@hiero-ledger/sdk";
 import { type Axios, AxiosError, type AxiosResponse } from "axios";
 import { KNS, NameNotFoundError, SignerRejectedError } from "../index.js";
 import { hexDecode } from "../hex.js";
@@ -298,6 +306,7 @@ describe("with a signer", () => {
 
   afterEach(() => {
     kns.close();
+    vi.restoreAllMocks();
   });
 
   it("isAssociatedForName checks the TLD token for an unregistered name", async () => {
@@ -329,5 +338,27 @@ describe("with a signer", () => {
 
     expect(error).toBeInstanceOf(SignerRejectedError);
     expect(error.source).toBe(rejection);
+  });
+
+  it("setText writes to a name registerName just registered via .h", async () => {
+    // the resolver has not seen foo.ℏ yet
+    const get = route(kns["_resolver"], {
+      "/name/.ℏ": { data: { v3ContractId: "0.0.400", v3TokenId: "0.0.401" } },
+      "/exchange-rate": { data: { usd: 0.05 } },
+    });
+
+    vi.spyOn(TransactionReceiptQuery.prototype, "execute").mockResolvedValue({
+      children: [{ serials: [] }, { serials: [{ toNumber: () => 5 }] }],
+    } as unknown as TransactionReceipt);
+
+    call.mockResolvedValue({});
+
+    await kns.registerName("foo.h", { years: 1 });
+    await kns.setText("foo.h", "Hello World");
+
+    expect(get).not.toHaveBeenCalledWith("/name/foo.%E2%84%8F");
+
+    const [, [transaction]] = call.mock.calls;
+    expect(transaction.contractId.toString()).toBe("0.0.400");
   });
 });
