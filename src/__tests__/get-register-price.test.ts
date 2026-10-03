@@ -48,4 +48,9 @@ describe("getRegisterPriceUsd", () => {
   it("can price 1 emoji character", () => {
     expect(getRegisterPriceUsd("😊")).toEqual(BigNumber(1000));
   });
+
+  it("prices a full name by its second-level domain", () => {
+    expect(getRegisterPriceUsd("fo.hh")).toEqual(BigNumber(50));
+    expect(getRegisterPriceUsd("안.h")).toEqual(BigNumber(1000));
+  });
 });

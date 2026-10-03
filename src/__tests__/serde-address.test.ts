@@ -4,10 +4,36 @@ import {
   deserializeBitcoinAddress,
   deserializeEthereumAddress,
   deserializeHederaAddress,
+  formatAddress,
   serializeAddress,
   serializeHederaAddress,
 } from "../serde-address";
 import { hexDecode, hexEncode } from "../hex";
+
+describe("formatAddress", () => {
+  it.each([
+    [3030, "0000000000000000000000000000000000000410", "0.0.1040"],
+    [0, "31427642", "1BvB"],
+    [
+      60,
+      "71c7656ec7ab88b098defb751b7401b5f6d8976f",
+      "0x71c7656ec7ab88b098defb751b7401b5f6d8976f",
+    ],
+    [
+      714,
+      "71c7656ec7ab88b098defb751b7401b5f6d8976f",
+      "0x71c7656ec7ab88b098defb751b7401b5f6d8976f",
+    ],
+    [
+      9006,
+      "71c7656ec7ab88b098defb751b7401b5f6d8976f",
+      "0x71c7656ec7ab88b098defb751b7401b5f6d8976f",
+    ],
+    [501, "0a0b0c", "0x0a0b0c"],
+  ])("formats coin type %i", (coinType, hex, formatted) => {
+    expect(formatAddress(coinType, hexDecode(hex))).toEqual(formatted);
+  });
+});
 
 describe("serializeAddress", () => {
   it("can serialize an old BTC address", () => {
