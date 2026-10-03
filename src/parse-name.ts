@@ -1,3 +1,12 @@
+import { utf8Encode } from "./utf8.js";
+
+// the contracts take the second-level domain and the record name as bytes32
+function requireFitsBytes32(value: string) {
+  if (utf8Encode(value).length > 32) {
+    throw Error(`invalid, expected \`${value}\` to be at most 32 bytes`);
+  }
+}
+
 function unaliasTopLevelDomain(tld: string): string {
   // alias .h to .ℏ
   if (tld === "h") {
@@ -18,6 +27,8 @@ export function parseName(name: string): ParsedName {
   if (nameParts.length !== 2 || nameParts.some((part) => part.length === 0)) {
     throw Error("invalid, expected a name of the form `example.hh`");
   }
+
+  requireFitsBytes32(nameParts[0]);
 
   return {
     secondLevelDomain: nameParts[0],
@@ -49,10 +60,14 @@ export function parseRecordName(recordName: string): ParsedRecordName {
   }
 
   const name = nameParts.slice(0, nameParts.length - 2).join(".");
+  const secondLevelDomain = nameParts[nameParts.length - 2];
+
+  requireFitsBytes32(name);
+  requireFitsBytes32(secondLevelDomain);
 
   return {
     recordName: name,
-    secondLevelDomain: nameParts[nameParts.length - 2],
+    secondLevelDomain,
     topLevelDomain: unaliasTopLevelDomain(nameParts[nameParts.length - 1]),
   };
 }
