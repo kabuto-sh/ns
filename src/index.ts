@@ -14,7 +14,6 @@ import {
   TransactionReceiptQuery,
   TransactionResponse,
 } from "@hiero-ledger/sdk";
-import axios, { type Axios } from "axios";
 import BigNumber from "bignumber.js";
 import { getRegisterPriceUsd } from "./get-register-price.js";
 import {
@@ -52,9 +51,22 @@ interface NameId {
   version: 1 | 2 | 3;
 }
 
-function handleResolverAxiosError(error: unknown): never {
-  if (axios.isAxiosError(error) && error.response != null) {
-    switch (error.response.status) {
+async function getJson<T>(url: string): Promise<T> {
+  const response = await fetch(url);
+
+  if (!response.ok) {
+    // an unread body holds its connection open until it's garbage collected
+    await response.body?.cancel();
+
+    throw new APIError(response.status, url);
+  }
+
+  return response.json();
+}
+
+function handleResolverError(error: unknown): never {
+  if (error instanceof APIError) {
+    switch (error.status) {
       case 404: // no domain registered
         throw new NameNotFoundError();
 
@@ -88,6 +100,19 @@ export class NameNotFoundError extends Error {
   }
 }
 
+export class APIError extends Error {
+  public status: number;
+  public url: string;
+
+  constructor(status: number, url: string) {
+    super(`Request failed with status code ${status}`);
+
+    this.name = "APIError";
+    this.status = status;
+    this.url = url;
+  }
+}
+
 export class SignerRejectedError extends Error {
   public source?: unknown;
 
@@ -104,9 +129,10 @@ export class KNS implements IKNS {
 
   private readonly _client: Client;
 
-  private readonly _resolver: Axios;
+  // base URLs without a trailing slash, since every path starts with one
+  private readonly _resolver: string;
 
-  private readonly _hederaMirror: Axios;
+  private readonly _hederaMirror: string;
 
   // cache of TLDs (ex. "hh") to v3 contract and token IDs (for purchasing)
   private readonly _v3TldIds: Map<
@@ -134,20 +160,17 @@ export class KNS implements IKNS {
     // increase max hbar fee to 8h
     this._client.setDefaultMaxTransactionFee(new Hbar(8));
 
-    this._resolver = axios.create({
-      baseURL:
-        options.resolver ??
-        (options.network === "testnet"
-          ? "https://ns.testnet.kabuto.sh/api"
-          : "https://ns.kabuto.sh/api"),
-    });
+    this._resolver = (
+      options.resolver ??
+      (options.network === "testnet"
+        ? "https://ns.testnet.kabuto.sh/api"
+        : "https://ns.kabuto.sh/api")
+    ).replace(/\/+$/, "");
 
-    this._hederaMirror = axios.create({
-      baseURL:
-        options.network === "mainnet"
-          ? "https://mainnet-public.mirrornode.hedera.com/"
-          : "https://testnet.mirrornode.hedera.com/",
-    });
+    this._hederaMirror =
+      options.network === "mainnet"
+        ? "https://mainnet-public.mirrornode.hedera.com"
+        : "https://testnet.mirrornode.hedera.com";
   }
 
   /**
@@ -211,16 +234,16 @@ export class KNS implements IKNS {
     const parsedName = parseName(name);
     const tokenId = (await this._getTokenIdForName(parsedName)).toString();
 
-    const hederaResp = await this._hederaMirror.get<{
+    const hederaResp = await getJson<{
       balance: {
         tokens: Array<{
           token_id: string;
         }>;
       };
-    }>(`/api/v1/accounts/${this._signer!.getAccountId()}`);
+    }>(`${this._hederaMirror}/api/v1/accounts/${this._signer!.getAccountId()}`);
 
     return (
-      hederaResp.data.balance.tokens.findIndex(
+      hederaResp.balance.tokens.findIndex(
         (token) => token.token_id === tokenId,
       ) >= 0
     );
@@ -346,7 +369,7 @@ export class KNS implements IKNS {
     let version: 1 | 2 | 3;
 
     try {
-      const kabutoResp = await this._resolver.get<{
+      const kabutoResp = await getJson<{
         data: {
           v1ContractId: string;
           v2ContractId: string;
@@ -358,42 +381,42 @@ export class KNS implements IKNS {
           v3TokenId: string;
           tokenSerialNumber: number;
         };
-      }>(`/name/${encodeURIComponent(normalizeName(name))}`);
+      }>(`${this._resolver}/name/${encodeURIComponent(normalizeName(name))}`);
 
-      serialNumber = kabutoResp.data.data.tokenSerialNumber;
+      serialNumber = kabutoResp.data.tokenSerialNumber;
       contractSerialNumber = serialNumber;
 
       if (serialNumber > 32000) {
         version = 3;
-        tokenId = kabutoResp.data.data.v3TokenId;
-        contractId = kabutoResp.data.data.v3ContractId;
+        tokenId = kabutoResp.data.v3TokenId;
+        contractId = kabutoResp.data.v3ContractId;
         serialNumber = serialNumber - 32000;
       } else if (serialNumber < 0) {
         // negative serial numbers use v2 IDs
         version = 2;
-        tokenId = kabutoResp.data.data.v2TokenId;
-        contractId = kabutoResp.data.data.v2ContractId;
+        tokenId = kabutoResp.data.v2TokenId;
+        contractId = kabutoResp.data.v2ContractId;
         serialNumber = -serialNumber;
       } else {
         version = 1;
-        tokenId = kabutoResp.data.data.v1TokenId;
-        contractId = kabutoResp.data.data.v1ContractId;
+        tokenId = kabutoResp.data.v1TokenId;
+        contractId = kabutoResp.data.v1ContractId;
       }
 
-      expirationTime = new Date(Date.parse(kabutoResp.data.data.expiresAt));
+      expirationTime = new Date(Date.parse(kabutoResp.data.expiresAt));
     } catch (error) {
-      handleResolverAxiosError(error);
+      handleResolverError(error);
     }
 
-    const hederaResp = await this._hederaMirror.get<{
+    const hederaResp = await getJson<{
       account_id: string;
-    }>(`/api/v1/tokens/${tokenId}/nfts/${serialNumber}`);
+    }>(`${this._hederaMirror}/api/v1/tokens/${tokenId}/nfts/${serialNumber}`);
 
     return {
       domain: `${parseName(name).secondLevelDomain}.${
         parseName(name).topLevelDomain
       }`,
-      ownerAccountId: AccountId.fromString(hederaResp.data.account_id),
+      ownerAccountId: AccountId.fromString(hederaResp.account_id),
       serialNumber,
       contractSerialNumber,
       expirationTime,
@@ -410,19 +433,21 @@ export class KNS implements IKNS {
     name: string,
   ): Promise<{ text: TextRecord[]; address: AddressRecord[] }> {
     try {
-      const { data } = await this._resolver.get<{
+      const { data } = await getJson<{
         data: {
           address: RawAddressRecord[];
           text: TextRecord[];
         };
-      }>(`/name/${encodeURIComponent(normalizeName(name))}/record`);
+      }>(
+        `${this._resolver}/name/${encodeURIComponent(normalizeName(name))}/record`,
+      );
 
       return {
-        address: data.data.address.map((rec) => mapRawAddress(rec)),
-        text: data.data.text,
+        address: data.address.map((rec) => mapRawAddress(rec)),
+        text: data.text,
       };
     } catch (error) {
-      handleResolverAxiosError(error);
+      handleResolverError(error);
     }
   }
 
@@ -450,15 +475,15 @@ export class KNS implements IKNS {
   async getAddressBytes(name: string, coinType: number): Promise<Uint8Array> {
     try {
       const nameComponent = encodeURIComponent(normalizeRecordName(name));
-      const url = `/name/${nameComponent}/record/address/${coinType}`;
+      const url = `${this._resolver}/name/${nameComponent}/record/address/${coinType}`;
 
-      const { data } = await this._resolver.get<{
+      const { data } = await getJson<{
         data: RawAddressRecord;
       }>(url);
 
-      return base64Decode(data.data.address);
+      return base64Decode(data.address);
     } catch (error) {
-      handleResolverAxiosError(error);
+      handleResolverError(error);
     }
   }
 
@@ -485,13 +510,15 @@ export class KNS implements IKNS {
    */
   async getText(name: string): Promise<string> {
     try {
-      const { data } = await this._resolver.get<{
+      const { data } = await getJson<{
         data: TextRecord;
-      }>(`/name/${encodeURIComponent(normalizeRecordName(name))}/record/text`);
+      }>(
+        `${this._resolver}/name/${encodeURIComponent(normalizeRecordName(name))}/record/text`,
+      );
 
-      return data.data.text;
+      return data.text;
     } catch (error) {
-      handleResolverAxiosError(error);
+      handleResolverError(error);
     }
   }
 
@@ -500,13 +527,11 @@ export class KNS implements IKNS {
    */
   async getMetadata(name: string): Promise<object> {
     try {
-      const { data } = await this._resolver.get<object>(
-        `/name/${encodeURIComponent(normalizeName(name))}/metadata`,
+      return await getJson<object>(
+        `${this._resolver}/name/${encodeURIComponent(normalizeName(name))}/metadata`,
       );
-
-      return data;
     } catch (error) {
-      handleResolverAxiosError(error);
+      handleResolverError(error);
     }
   }
 
@@ -630,11 +655,11 @@ export class KNS implements IKNS {
       serializeAddress(coinType, address),
     );
 
-    const { data } = await this._resolver.get<{
+    const { data } = await getJson<{
       data: Array<{ domain: string; parent: string }>;
-    }>(`/record/address/${coinType}/${fmtAddress}/name`);
+    }>(`${this._resolver}/record/address/${coinType}/${fmtAddress}/name`);
 
-    return data.data.map((rec) => `${rec.domain}.${rec.parent}`);
+    return data.map((rec) => `${rec.domain}.${rec.parent}`);
   }
 
   /**
@@ -648,11 +673,11 @@ export class KNS implements IKNS {
       ownerAccountId = this._signer!.getAccountId();
     }
 
-    const { data } = await this._resolver.get<{
+    const { data } = await getJson<{
       data: { names: Array<{ name: string; expiresAt: string }> };
-    }>(`/owner/${ownerAccountId}`);
+    }>(`${this._resolver}/owner/${ownerAccountId}`);
 
-    return data.data.names.map((name) => ({
+    return data.names.map((name) => ({
       domain: name.name as string,
       expirationTime: new Date(name.expiresAt),
     }));
@@ -681,15 +706,15 @@ export class KNS implements IKNS {
     }
 
     try {
-      const { data } = await this._resolver.get<{
+      const { data } = await getJson<{
         data: {
           v3ContractId: string;
           v3TokenId: string;
         };
-      }>(`/name/.${tld}`);
+      }>(`${this._resolver}/name/.${tld}`);
 
-      const contractId = ContractId.fromString(data.data.v3ContractId);
-      const tokenId = TokenId.fromString(data.data.v3TokenId);
+      const contractId = ContractId.fromString(data.v3ContractId);
+      const tokenId = TokenId.fromString(data.v3TokenId);
 
       id = { contractId, tokenId };
 
@@ -697,7 +722,7 @@ export class KNS implements IKNS {
 
       return id;
     } catch (error) {
-      handleResolverAxiosError(error);
+      handleResolverError(error);
     }
   }
 
@@ -808,11 +833,11 @@ export class KNS implements IKNS {
       return this._hbarPrice;
     }
 
-    const { data } = await this._resolver.get<{
+    const { data } = await getJson<{
       data: { usd: number };
-    }>("/exchange-rate");
+    }>(`${this._resolver}/exchange-rate`);
 
-    this._hbarPrice = new BigNumber(data.data.usd);
+    this._hbarPrice = new BigNumber(data.usd);
     this._hbarPriceTimestamp = Date.now();
 
     return this._hbarPrice;
