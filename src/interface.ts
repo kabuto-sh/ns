@@ -39,9 +39,18 @@ export interface IKNS {
 
   /**
    * Registers a new name to the current signer for the desired duration.
-   * To check how much HBAR this will cost, call `getRegisterPrice(name)`.
+   * To check how much HBAR this will cost, call `getRegisterPriceHbar(name)`.
    */
   registerName(name: string, duration: { years: number }): Promise<Name>;
+
+  /**
+   * Extends the ownership for the name for the desired duration.
+   * Must be the owner of the NFT for this name.
+   */
+  extendNameRegistration(
+    name: string,
+    duration: { years: number },
+  ): Promise<Name>;
 
   /**
    * Sets the address record for a name and coin type.
@@ -91,7 +100,9 @@ export interface IKNS {
   /**
    * Searches for names with the given owner account. Returns the domain and expiration.
    */
-  findNamesByOwner(): Promise<Array<Pick<Name, "domain" | "expirationTime">>>;
+  findNamesByOwner(
+    ownerAccountId?: AccountId | string,
+  ): Promise<Array<Pick<Name, "domain" | "expirationTime">>>;
 
   /**
    * Gets the registration information for a name, if registered.

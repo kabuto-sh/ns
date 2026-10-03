@@ -76,6 +76,7 @@ function mapRawAddress(rec: RawAddressRecord): AddressRecord {
   };
 }
 
+export type { IKNS } from "./interface.js";
 export type { AddressRecord, Name, TextRecord } from "./models.js";
 
 export class NameNotFoundError extends Error {
@@ -254,7 +255,7 @@ export class KNS implements IKNS {
 
   /**
    * Registers a new name to the current signer for the desired duration.
-   * To check how much HBAR this will cost, call `getRegisterPrice(name)`.
+   * To check how much HBAR this will cost, call `getRegisterPriceHbar(name)`.
    */
   async registerName(name: string, duration: { years: number }): Promise<Name> {
     const parsedName = parseName(name);
