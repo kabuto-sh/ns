@@ -24,7 +24,7 @@ import {
   parseName,
   parseRecordName,
 } from "./parse-name.js";
-import { addYears } from "date-fns";
+import { dateAddYears } from "./add-years.js";
 import {
   deserializeHederaAddress,
   formatAddress,
@@ -291,7 +291,7 @@ export class KNS implements IKNS {
     return {
       domain: `${parsedName.secondLevelDomain}.${parsedName.topLevelDomain}`,
       ownerAccountId: this._signer!.getAccountId(),
-      expirationTime: new Date(addYears(Date.now(), duration.years)),
+      expirationTime: dateAddYears(new Date(), duration.years),
       ...nameId,
     };
   }
@@ -325,7 +325,10 @@ export class KNS implements IKNS {
     await this._executeTransaction(transaction);
 
     // adjust the expiration time on the name
-    nameData.expirationTime = addYears(nameData.expirationTime, duration.years);
+    nameData.expirationTime = dateAddYears(
+      nameData.expirationTime,
+      duration.years,
+    );
 
     return nameData;
   }
