@@ -9,7 +9,7 @@ describe("parseName", () => {
     });
   });
 
-  it.each(["foo", "sub.foo.hh", ".hh"])("rejects %j", (name) => {
+  it.each(["foo", "sub.foo.hh", ".hh", "foo."])("rejects %j", (name) => {
     expect(() => parseName(name)).toThrow("expected a name of the form");
   });
 });
@@ -27,5 +27,11 @@ describe("parseRecordName", () => {
       secondLevelDomain: "foo",
       topLevelDomain: "hh",
     });
+  });
+
+  it.each(["foo", ".hh", "foo.", "a..foo.hh"])("rejects %j", (name) => {
+    expect(() => parseRecordName(name)).toThrow(
+      "expected a record name of the form",
+    );
   });
 });

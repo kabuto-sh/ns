@@ -15,7 +15,7 @@ export interface ParsedName {
 export function parseName(name: string): ParsedName {
   const nameParts = name.trim().split(".");
 
-  if (nameParts.length !== 2 || nameParts[0].length === 0) {
+  if (nameParts.length !== 2 || nameParts.some((part) => part.length === 0)) {
     throw Error("invalid, expected a name of the form `example.hh`");
   }
 
@@ -42,7 +42,7 @@ export interface ParsedRecordName {
 export function parseRecordName(recordName: string): ParsedRecordName {
   const nameParts = recordName.trim().split(".");
 
-  if (nameParts.length === 1) {
+  if (nameParts.length === 1 || nameParts.some((part) => part.length === 0)) {
     throw Error(
       "invalid, expected a record name of the form `example.hh` or `test.example.hh`",
     );
