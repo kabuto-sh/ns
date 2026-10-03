@@ -7,6 +7,10 @@
   "module": "lib/index.js",
   "browser": "lib/index.js",
   "types": "lib/index.d.ts",
+  "files": [
+    "lib",
+    "dist"
+  ],
   "scripts": {
     "fmt": "prettier --write .",
     "fmt:check": "prettier --list-different .",
